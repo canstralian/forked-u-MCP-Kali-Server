@@ -1,14 +1,21 @@
 # MCP Kali Server (Forked)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/canstralian/MCP-Kali-Server/ci.yml?branch=main)](https://github.com/canstralian/forked-u-MCP-Kali-Server/actions) 
-[![Code Quality](https://img.shields.io/codefactor/grade/github/canstralian/MCP-Kali-Server)](https://www.codefactor.io/repository/github/canstralian/forked-u-MCP-Kali-Server)
-[![Architecture](https://img.shields.io/badge/Architecture-MCP%20Server-blue)](https://github.com/canstralian/MCP-Kali-Server)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/canstralian/forked-u-MCP-Kali-Server/ci.yml?branch=main)](https://github.com/canstralian/forked-u-MCP-Kali-Server/actions) 
+[![Code Quality](https://img.shields.io/codefactor/grade/github/canstralian/forked-u-MCP-Kali-Server)](https://www.codefactor.io/repository/github/canstralian/forked-u-MCP-Kali-Server)
+[![Architecture](https://img.shields.io/badge/Architecture-MCP%20Server-blue)](https://github.com/canstralian/forked-u-MCP-Kali-Server)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-enabled-blue)](https://www.docker.com/)
 
-**This repository is a fork of [Wh0am123/MCP-Kali-Server](https://github.com/Wh0am123/MCP-Kali-Server).**  
-While it builds on the original foundation, this fork is taking the project in a new direction, with upcoming changes to features and integrations.
+**Fork Notice:**  
+This repository is a fork of [Wh0am123/MCP-Kali-Server](https://github.com/Wh0am123/MCP-Kali-Server).  
+While it inherits the original structure and features, this fork will evolve in a **new direction**, focusing on expanded AI integrations, multi-agent orchestration, and extended security automation.
+
+**Purpose of the Fork:**  
+- Modernize and extend AI-assisted penetration testing capabilities.  
+- Introduce more flexible MCP server integrations (HuggingFace, GitHub, Notion).  
+- Improve automation for CTF challenges, recon, and exploitation workflows.  
+- Maintain schema-compliant MCP client/server interaction while enhancing functionality.
 
 ---
 
