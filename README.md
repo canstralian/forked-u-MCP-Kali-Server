@@ -1,91 +1,96 @@
-# MCP Kali Server
+# MCP Kali Server (Forked)
 
-**Kali MCP Server** is a lightweight API bridge that connects MCP Clients (e.g: Claude Desktop, [5ire](https://github.com/nanbingxyz/5ire)) to the API server which allows excuting commands on a Linux terminal.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) 
+[![Build Status](https://img.shields.io/github/actions/workflow/status/YourUsername/MCP-Kali-Server/ci.yml?branch=main)](https://github.com/YourUsername/MCP-Kali-Server/actions) 
+[![Code Quality](https://img.shields.io/codefactor/grade/github/YourUsername/MCP-Kali-Server)](https://www.codefactor.io/repository/github/YourUsername/MCP-Kali-Server)
+[![Architecture](https://img.shields.io/badge/Architecture-MCP%20Server-blue)](https://github.com/YourUsername/MCP-Kali-Server)
+[![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/docker-enabled-blue)](https://www.docker.com/)
 
-This allows the MCP to run terminal commands like `nmap`, `nxc` or any other tool, interact with web applications using tools like `curl`, `wget`, `gobuster`. 
- And perform **AI-assisted penetration testing**, solving **CTF web challenge** in real time, helping in **solving machines from HTB or THM**.
-
-## My Medium Article on This Tool
-
-[![How MCP is Revolutionizing Offensive Security](https://miro.medium.com/v2/resize:fit:828/format:webp/1*g4h-mIpPEHpq_H63W7Emsg.png)](https://yousofnahya.medium.com/how-mcp-is-revolutionizing-offensive-security-93b2442a5096)
-
-👉 [**How MCP is Revolutionizing Offensive Security**](https://yousofnahya.medium.com/how-mcp-is-revolutionizing-offensive-security-93b2442a5096)
+**This repository is a fork of [Wh0am123/MCP-Kali-Server](https://github.com/Wh0am123/MCP-Kali-Server).**  
+While it builds on the original foundation, this fork is taking the project in a new direction, with upcoming changes to features and integrations.
 
 ---
 
 ## 🔍 Use Case
 
-The goal is to enable AI-driven offensive security testing by:
+The original MCP functionality allowed AI-driven offensive security testing by:  
 
-- Letting the MCP interact with AI endpoints like OpenAI, Claude, DeepSeek, or any other models.
-- Exposing an API to execute commands on a Kali machine.
-- Using AI to suggest and run terminal commands to solve CTF challenges or automate recon/exploitation tasks.
-- Allowing MCP apps to send custom requests (e.g., `curl`, `nmap`, `ffuf`, etc.) and receive structured outputs.
+- Interacting with AI endpoints like OpenAI, Claude, DeepSeek, or other models.  
+- Exposing an API to execute commands on a Kali Linux machine.  
+- Automating recon, exploitation, and solving CTF web challenges.  
+- Sending custom requests (e.g., curl, nmap, ffuf) and receiving structured outputs.  
 
-Here are some example for my testing (I used google's AI `gemini 2.0 flash`)
+**This fork will expand the direction of the project to include:**  
 
-### Example solving my web CTF challenge in RamadanCTF
-https://github.com/user-attachments/assets/dc93b71d-9a4a-4ad5-8079-2c26c04e5397
-
-### Trying to solve machine "code" from HTB
-https://github.com/user-attachments/assets/3ec06ff8-0bdf-4ad5-be71-2ec490b7ee27
-
+- Enhanced automation for security workflows beyond standard terminal commands.  
+- Extended integrations with additional AI models and services.  
+- Improved orchestration for multi-agent scenarios and collaborative testing.  
+- Streamlined pipelines for penetration testing, CTF solving, and ethical hacking exercises.
 
 ---
 
 ## 🚀 Features
 
-- 🧠 **AI Endpoint Integration**: Connect your kali to any MCP of your liking such as claude desktop or 5ier.
-- 🖥️ **Command Execution API**: Exposes a controlled API to execute terminal commands on your Kali Linux machine.
-- 🕸️ **Web Challenge Support**: AI can interact with websites and APIs, capture flags via `curl` and any other tool AI the needs.
-- 🔐 **Designed for Offensive Security Professionals**: Ideal for red teamers, bug bounty hunters, or CTF players automating common tasks.
+The original repository included:
+
+- 🧠 **AI Endpoint Integration:** Connect Kali to any MCP client like Claude Desktop or 5ire.  
+- 🖥️ **Command Execution API:** Controlled API to execute terminal commands on Kali Linux.  
+- 🕸️ **Web Challenge Support:** AI-assisted interaction with web apps, APIs, and capture of flags.  
+- 🔐 **Designed for Offensive Security Professionals:** Ideal for red teamers, bug bounty hunters, or CTF players automating common tasks.  
+
+**Future features in this fork will focus on:**  
+
+- Multi-agent orchestration and intelligent task delegation.  
+- Integration with cloud-based AI endpoints and model pipelines.  
+- Enhanced logging, analytics, and structured output for automation workflows.  
+- Additional security tooling, including forensic and analysis utilities.
 
 ---
 
 ## 🛠️ Installation
 
-### On your Linux Machine (Will act as MCP Server)
+**On the Linux machine (MCP Server):**
+
 ```bash
-git clone https://github.com/Wh0am123/MCP-Kali-Server.git
+git clone https://github.com/YourUsername/MCP-Kali-Server.git
 cd MCP-Kali-Server
 python3 kali_server.py
-```
 
-### On your MCP Client (You can run on Windows or Linux)
-- You will want to run `python3 /absolute/path/to/mcp_server.py http://LINUX_IP:5000`
+On your MCP Client (Windows or Linux):
 
-#### Configuration for claude desktop:
-edit (C:\Users\USERNAME\AppData\Roaming\Claude\claude_desktop_config.json)
+python3 /absolute/path/to/mcp_server.py http://LINUX_IP:5000
 
-```json
+Claude Desktop Configuration (claude_desktop_config.json):
+
 {
-    "mcpServers": {
-        "kali_mcp": {
-            "command": "python3",
-            "args": [
-                "/absolute/path/to/mcp_server.py",
-                "--server",
-                "http://LINUX_IP:5000/"
-            ]
-        }
+  "mcpServers": {
+    "kali_mcp": {
+      "command": "python3",
+      "args": [
+        "/absolute/path/to/mcp_server.py",
+        "--server",
+        "http://LINUX_IP:5000/"
+      ]
     }
+  }
 }
-```
 
-#### Configuration for [5ire](https://github.com/nanbingxyz/5ire) Desktop Application:
-- Simply add an MCP with the command `python3 /absolute/path/to/mcp_server.py http://LINUX_IP:5000` and it will automatically generate the needed configuration files.
+5ire Desktop Application:
+	•	Add an MCP with the command python3 /absolute/path/to/mcp_server.py http://LINUX_IP:5000 and the app will generate the needed configuration automatically.
 
-## 🔮 Other Possibilities
+⸻
 
-There are more possibilites than described since the AI model can now execute commands on the terminal. Here are some example:
+🔮 Extended Possibilities
 
-- Memory forensics using Volatility
-  - Automating memory analysis tasks such as process enumeration, DLL injection checks, and registry extraction from memory dumps.
+The AI-driven terminal opens up more potential beyond the original features:
+	•	Memory Forensics (Volatility): Automate memory analysis tasks like process enumeration, DLL injection checks, and registry extraction from memory dumps.
+	•	Disk Forensics (SleuthKit): Automate analysis from disk images, timeline generation, file carving, and hash comparisons.
+	•	Custom AI Workflows: The fork will explore automated multi-step AI-driven security workflows, integrating multiple tools in a single pipeline.
 
-- Disk forensics with SleuthKit
-  - Automating analysis from disk images, timeline generation, file carving, and hash comparisons.
+⸻
 
+⚠️ Disclaimer
 
-## ⚠️ Disclaimer:
-This project is intended solely for educational and ethical testing purposes. Any misuse of the information or tools provided — including unauthorized access, exploitation, or malicious activity — is strictly prohibited.
-The author assumes no responsibility for misuse.
+This project is intended solely for educational and ethical testing purposes. Any misuse — including unauthorized access, exploitation, or malicious activity — is strictly prohibited. The author assumes no responsibility for misuse.
+
