@@ -1,0 +1,31 @@
+name: "MCP Kali Server CodeQL Configuration"
+
+disable-default-rules: false
+
+paths:
+  - models/
+  - "*.py"
+
+paths-ignore:
+  - tests/
+  - test_*.py
+  - "*_test.py"
+  - .github/
+  - build/
+  - dist/
+  - __pycache__/
+  - "*.pyc"
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+packs:
+  - codeql/python-queries
+
+# Additional configuration for Python-specific analysis
+query-filters:
+  - exclude:
+      id: py/unused-import
+  - exclude:
+      id: py/similar-function
