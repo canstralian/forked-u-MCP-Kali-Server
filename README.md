@@ -1,8 +1,7 @@
 # MCP Kali Server (Forked)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/canstralian/forked-u-MCP-Kali-Server/ci.yml?branch=main)](https://github.com/canstralian/forked-u-MCP-Kali-Server/actions) 
-[![Code Quality](https://img.shields.io/codefactor/grade/github/canstralian/forked-u-MCP-Kali-Server)](https://www.codefactor.io/repository/github/canstralian/forked-u-MCP-Kali-Server)
+[![CodeQL](https://github.com/canstralian/forked-u-MCP-Kali-Server/actions/workflows/codeql.yml/badge.svg)](https://github.com/canstralian/forked-u-MCP-Kali-Server/security/code-scanning)
 [![Architecture](https://img.shields.io/badge/Architecture-MCP%20Server-blue)](https://github.com/canstralian/forked-u-MCP-Kali-Server)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-enabled-blue)](https://www.docker.com/)
