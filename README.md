@@ -1,7 +1,7 @@
 # MCP Kali Server (Forked)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/canada/MCP-Kali-Server/ci.yml?branch=main)](https://github.com/canstrakian/MCP-Kali-Server/actions) 
+[![Build Status](https://img.shields.io/github/actions/workflow/status/canstralian/MCP-Kali-Server/ci.yml?branch=main)](https://github.com/canstrakian/MCP-Kali-Server/actions) 
 [![Code Quality](https://img.shields.io/codefactor/grade/github/canstralian/MCP-Kali-Server)](https://www.codefactor.io/repository/github/canstralian/MCP-Kali-Server)
 [![Architecture](https://img.shields.io/badge/Architecture-MCP%20Server-blue)](https://github.com/canstralian/MCP-Kali-Server)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
