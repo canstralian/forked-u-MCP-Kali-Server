@@ -96,6 +96,18 @@ The AI-driven terminal opens up more potential beyond the original features:
 
 ⸻
 
+## 🔒 Branch Protection
+
+This repository uses branch protection rules to maintain code quality and security. The `main` branch is protected with:
+
+- ✅ Prevention of force pushes and deletions
+- ✅ Required status checks before merging (CI Pipeline, CodeQL Security Scan)
+- ✅ Pull request reviews required before merging
+
+📄 For detailed information on configuring and maintaining branch protection, see [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md).
+
+⸻
+
 ⚠️ Disclaimer
 
 This project is intended solely for educational and ethical testing purposes. Any misuse — including unauthorized access, exploitation, or malicious activity — is strictly prohibited. The author assumes no responsibility for misuse.
