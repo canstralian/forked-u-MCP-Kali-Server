@@ -12,7 +12,7 @@ import sys
 import traceback
 import threading
 from typing import Dict, Any
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 
 # Configure logging
 logging.basicConfig(
@@ -551,14 +551,14 @@ def health_check():
 
 @app.route("/mcp/capabilities", methods=["GET"])
 def get_capabilities():
-    # Return tool capabilities similar to our existing MCP server
-    pass
+    """Return tool capabilities (not yet implemented)."""
+    abort(501, description="Not implemented")
 
 
 @app.route("/mcp/tools/kali_tools/<tool_name>", methods=["POST"])
 def execute_tool(tool_name):
-    # Direct tool execution without going through the API server
-    pass
+    """Direct tool execution (not yet implemented)."""
+    abort(501, description="Not implemented")
 
 
 def parse_args():
