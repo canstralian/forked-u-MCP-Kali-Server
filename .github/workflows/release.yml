@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: Create Release
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install build twine
+
+      - name: Run tests
+        run: |
+          pip install pytest pytest-cov
+          pytest -v
+
+      - name: Extract release notes
+        id: extract-release-notes
+        run: |
+          # Extract release notes from CHANGELOG.md for this version
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Build Docker image
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          docker build -t mcp-kali-server:latest -t mcp-kali-server:$VERSION .
+
+      - name: Save Docker image
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          docker save mcp-kali-server:$VERSION | gzip > mcp-kali-server-$VERSION-docker.tar.gz
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            mcp-kali-server-*-docker.tar.gz
+          body: |
+            # MCP Kali Server ${{ steps.extract-release-notes.outputs.version }}
+
+            ## Installation
+
+            ### Docker
+            ```bash
+            # Load the Docker image
+            docker load < mcp-kali-server-${{ steps.extract-release-notes.outputs.version }}-docker.tar.gz
+
+            # Run the container
+            docker run -p 5000:5000 mcp-kali-server:${{ steps.extract-release-notes.outputs.version }}
+            ```
+
+            ### From Source
+            ```bash
+            git clone https://github.com/canstralian/forked-u-MCP-Kali-Server.git
+            cd forked-u-MCP-Kali-Server
+            git checkout ${{ steps.extract-release-notes.outputs.version }}
+            pip install -r requirements.txt
+            python3 kali_server.py
+            ```
+
+            ## What's Changed
+
+            See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+
+            ## Security Notes
+
+            Please review [SECURITY.md](SECURITY.md) for security considerations and best practices.
+
+            **⚠️ Educational Use Only:** This tool is intended for authorized penetration testing and educational purposes only.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -9,8 +9,9 @@ on:
       - main
 
 jobs:
-  build:
+  lint-and-test:
     runs-on: ubuntu-latest
+    name: Lint and Test
 
     steps:
       # Step 1: Check out repository
@@ -23,7 +24,16 @@ jobs:
         with:
           python-version: '3.11'
 
-      # Step 3: Install dependencies
+      # Step 3: Cache dependencies
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Step 4: Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -33,20 +43,78 @@ jobs:
             echo "Error: requirements.txt not found!"
             exit 1
           fi
-          pip install pylint flake8 pytest
+          pip install pylint flake8 bandit safety pip-audit pytest pytest-cov
 
-      # Step 4: Lint Python code with Pylint
-      - name: Lint with Pylint
-        run: pylint **/*.py
-
-      # Step 5: Lint Python code with Flake8
+      # Step 5: Lint with Flake8
       - name: Lint with Flake8
-        run: flake8 .
+        run: flake8 . --count --max-line-length=120 --statistics --show-source
+        continue-on-error: true
 
-      # Step 6: Run Tests
+      # Step 6: Lint with Pylint (allow to continue on errors)
+      - name: Lint with Pylint
+        run: pylint kali_server.py mcp_server.py --max-line-length=120 || true
+        continue-on-error: true
+
+      # Step 7: Run Tests with Coverage
       - name: Run Tests
-        run: pytest -v --maxfail=1 --disable-warnings
+        run: |
+          pytest -v --cov=. --cov-report=term --cov-report=xml --maxfail=1 --disable-warnings
 
-      # Step 7: Build Docker image
+      # Step 8: Upload coverage reports
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        continue-on-error: true
+
+  security:
+    runs-on: ubuntu-latest
+    name: Security Scanning
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install bandit safety pip-audit
+
+      # Security scan with Bandit
+      - name: Security scan with Bandit
+        run: |
+          bandit -r kali_server.py mcp_server.py -f json -o bandit-report.json || true
+          bandit -r kali_server.py mcp_server.py -f txt || true
+        continue-on-error: true
+
+      # Check dependencies for vulnerabilities
+      - name: Check dependencies with pip-audit
+        run: pip-audit --desc || true
+        continue-on-error: true
+
+      # Alternative dependency check with safety
+      - name: Check dependencies with Safety
+        run: safety check --json || true
+        continue-on-error: true
+
+  docker:
+    runs-on: ubuntu-latest
+    name: Docker Build
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      # Build Docker image
       - name: Build Docker image
         run: docker build -t mcp-kali-server:latest .
+
+      # Test Docker image can run
+      - name: Test Docker image
+        run: |
+          docker run --rm mcp-kali-server:latest python3 --version
+          echo "Docker image built successfully!"

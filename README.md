@@ -56,19 +56,99 @@ The original repository included:
 
 ## 🛠️ Installation
 
-**On the Linux machine (MCP Server):**
+### Prerequisites
+
+- **Operating System:** Kali Linux (recommended) or any Linux distribution
+- **Python:** 3.11 or higher
+- **Docker:** (optional) for containerized deployment
+
+### Method 1: Quick Start with Docker (Recommended)
 
 ```bash
-git clone https://github.com/YourUsername/MCP-Kali-Server.git
-cd MCP-Kali-Server
+# Clone the repository
+git clone https://github.com/canstralian/forked-u-MCP-Kali-Server.git
+cd forked-u-MCP-Kali-Server
+
+# Build and run with docker-compose
+docker-compose up -d
+
+# Or build and run manually
+docker build -t mcp-kali-server .
+docker run -p 5000:5000 mcp-kali-server
+```
+
+### Method 2: Installation from Source
+
+**On the Linux machine (API Server):**
+
+```bash
+# Clone the repository
+git clone https://github.com/canstralian/forked-u-MCP-Kali-Server.git
+cd forked-u-MCP-Kali-Server
+
+# Create and activate virtual environment (recommended)
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Copy and configure environment variables
+cp .env.example .env
+# Edit .env with your settings
+
+# Run the server
 python3 kali_server.py
+```
 
-On your MCP Client (Windows or Linux):
+**On your MCP Client (Windows or Linux):**
 
-python3 /absolute/path/to/mcp_server.py http://LINUX_IP:5000
+```bash
+python3 /absolute/path/to/mcp_server.py --server http://LINUX_IP:5000
+```
 
-Claude Desktop Configuration (claude_desktop_config.json):
+### Method 3: Development Installation
 
+```bash
+# Clone and setup
+git clone https://github.com/canstralian/forked-u-MCP-Kali-Server.git
+cd forked-u-MCP-Kali-Server
+
+# Install with development dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest -v
+
+# Run linters
+flake8 .
+pylint kali_server.py mcp_server.py
+```
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Create a `.env` file from `.env.example`:
+
+```bash
+# API Server Configuration
+API_PORT=5000
+DEBUG_MODE=0
+COMMAND_TIMEOUT=180
+
+# MCP Server Configuration
+KALI_SERVER_URL=http://localhost:5000
+REQUEST_TIMEOUT=300
+```
+
+### Claude Desktop Configuration
+
+Edit `claude_desktop_config.json`:
+
+```json
 {
   "mcpServers": {
     "kali_mcp": {
@@ -81,22 +161,173 @@ Claude Desktop Configuration (claude_desktop_config.json):
     }
   }
 }
+```
 
-5ire Desktop Application:
-	•	Add an MCP with the command python3 /absolute/path/to/mcp_server.py http://LINUX_IP:5000 and the app will generate the needed configuration automatically.
+### 5ire Desktop Application
 
-⸻
+Add an MCP with the command:
+```bash
+python3 /absolute/path/to/mcp_server.py http://LINUX_IP:5000
+```
 
-🔮 Extended Possibilities
+The app will generate the needed configuration automatically.
+
+---
+
+## 📖 Usage
+
+### Available Tools
+
+The MCP server provides access to the following security tools:
+
+- **Network Scanning:** nmap
+- **Directory Enumeration:** gobuster, dirb
+- **Web Scanning:** nikto, wpscan, sqlmap
+- **Password Cracking:** hydra, john
+- **SMB Enumeration:** enum4linux
+- **Exploitation Framework:** metasploit
+
+### Example Commands
+
+Through your MCP client (like Claude Desktop), you can use natural language:
+
+```
+"Run an nmap scan on 192.168.1.1"
+"Use gobuster to enumerate directories on http://example.com"
+"Check http://example.com for SQL injection vulnerabilities"
+"Crack the hashes in /path/to/hashfile using john"
+```
+
+### API Endpoints
+
+Direct API usage:
+
+```bash
+# Health check
+curl http://localhost:5000/health
+
+# Execute nmap scan
+curl -X POST http://localhost:5000/api/tools/nmap \
+  -H "Content-Type: application/json" \
+  -d '{"target": "192.168.1.1", "scan_type": "quick"}'
+
+# Run custom command
+curl -X POST http://localhost:5000/api/command \
+  -H "Content-Type: application/json" \
+  -d '{"command": "whoami"}'
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pytest -v
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test file
+pytest test_basic.py -v
+```
+
+---
+
+## 🔒 Security Considerations
+
+**⚠️ IMPORTANT:** This tool executes system commands and should be deployed with extreme caution.
+
+### Best Practices
+
+1. **Never expose to public internet** without authentication
+2. **Use in isolated networks** or behind VPN/firewall
+3. **Run with minimal privileges** (not as root)
+4. **Review logs regularly** for suspicious activity
+5. **Keep dependencies updated** (`pip-audit`, `safety check`)
+
+See [SECURITY.md](SECURITY.md) for comprehensive security guidelines.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Quick Start for Contributors
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests and linters
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+---
+
+## 📋 Project Status
+
+### Current Version: v0.1.0 (Alpha)
+
+- ✅ Core MCP server functionality
+- ✅ Security tool integrations
+- ✅ Docker support
+- ✅ Basic tests and CI/CD
+- ✅ Comprehensive documentation
+
+### Roadmap
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and upcoming features.
+
+**Planned Features:**
+- Multi-agent orchestration
+- Cloud AI endpoint integration
+- Enhanced logging and analytics
+- Memory and disk forensics tools
+- Advanced automation workflows
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🔮 Extended Possibilities
 
 The AI-driven terminal opens up more potential beyond the original features:
-	•	Memory Forensics (Volatility): Automate memory analysis tasks like process enumeration, DLL injection checks, and registry extraction from memory dumps.
-	•	Disk Forensics (SleuthKit): Automate analysis from disk images, timeline generation, file carving, and hash comparisons.
-	•	Custom AI Workflows: The fork will explore automated multi-step AI-driven security workflows, integrating multiple tools in a single pipeline.
 
-⸻
+- **Memory Forensics (Volatility):** Automate memory analysis tasks like process enumeration, DLL injection checks, and registry extraction from memory dumps.
+- **Disk Forensics (SleuthKit):** Automate analysis from disk images, timeline generation, file carving, and hash comparisons.
+- **Custom AI Workflows:** The fork will explore automated multi-step AI-driven security workflows, integrating multiple tools in a single pipeline.
 
-⚠️ Disclaimer
+---
 
-This project is intended solely for educational and ethical testing purposes. Any misuse — including unauthorized access, exploitation, or malicious activity — is strictly prohibited. The author assumes no responsibility for misuse.
+## ⚠️ Disclaimer
 
+This project is intended **solely for educational and ethical testing purposes**. Any misuse — including unauthorized access, exploitation, or malicious activity — is **strictly prohibited**. 
+
+**You are responsible for:**
+- Obtaining proper authorization before testing
+- Complying with all applicable laws
+- Using the tool ethically and responsibly
+
+The authors assume **no responsibility** for misuse.
+
+---
+
+## 🙏 Acknowledgments
+
+- Original project by [Wh0am123](https://github.com/Wh0am123/MCP-Kali-Server)
+- Inspired by [project_astro](https://github.com/whit3rabbit0/project_astro)
+- Built with the [Model Context Protocol (MCP)](https://github.com/anthropics/mcp)
+
+---
+
+## 📞 Support
+
+- **Issues:** [GitHub Issues](https://github.com/canstralian/forked-u-MCP-Kali-Server/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/canstralian/forked-u-MCP-Kali-Server/discussions)
+- **Security:** See [SECURITY.md](SECURITY.md) for vulnerability reporting
