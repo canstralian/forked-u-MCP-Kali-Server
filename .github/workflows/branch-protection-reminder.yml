@@ -1,0 +1,55 @@
+name: Branch Protection Reminder
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize]
+
+jobs:
+  check-branch-protection:
+    name: Remind about branch protection
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check if branch protection reminder should be shown
+        run: |
+          echo "::notice::📋 Remember to configure branch protection for the main branch"
+          echo "::notice::📄 See BRANCH_PROTECTION.md for detailed setup instructions"
+          echo "::notice::✅ Required: Prevent force pushes and deletions"
+          echo "::notice::✅ Required: Require status checks (build, Analyze) to pass before merging"
+
+      - name: Comment on PR (first time only)
+        if: github.event.action == 'opened'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const message = `## 🔒 Branch Protection Reminder
+
+            This PR targets the \`main\` branch. Please ensure branch protection rules are configured to maintain code quality and security.
+
+            ### Required Settings:
+            - ✅ Prevent force pushes and deletions
+            - ✅ Require status checks to pass before merging
+              - \`build\` (CI Pipeline)
+              - \`Analyze\` (CodeQL Security Scan)
+
+            ### Documentation:
+            📄 See [BRANCH_PROTECTION.md](${context.payload.repository.html_url}/blob/main/BRANCH_PROTECTION.md) for detailed setup instructions.
+
+            **Note:** This is an automated reminder. Branch protection must be configured in repository settings.`;
+
+            // Only comment if this is a PR from a fork or first-time contributor
+            // to avoid spam on regular PRs
+            if (context.payload.pull_request.head.repo.full_name !== context.payload.repository.full_name) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+            }
