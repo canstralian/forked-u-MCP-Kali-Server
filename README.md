@@ -310,7 +310,7 @@ The AI-driven terminal opens up more potential beyond the original features:
 This repository uses branch protection rules to maintain code quality and security. The `main` branch is protected with:
 
 - ✅ Prevention of force pushes and deletions
-- ✅ Required status checks before merging (CI Pipeline, CodeQL Security Scan)
+- ✅ Required status checks before merging (Lint and Test, CodeQL Analyze)
 - ✅ Pull request reviews required before merging
 
 📄 For detailed information on configuring and maintaining branch protection, see [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md).

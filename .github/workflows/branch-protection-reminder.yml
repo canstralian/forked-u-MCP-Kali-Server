@@ -20,7 +20,7 @@ jobs:
           echo "::notice::📋 Remember to configure branch protection for the main branch"
           echo "::notice::📄 See BRANCH_PROTECTION.md for detailed setup instructions"
           echo "::notice::✅ Required: Prevent force pushes and deletions"
-          echo "::notice::✅ Required: Require status checks (build, Analyze) to pass before merging"
+          echo "::notice::✅ Required: Require status checks (Lint and Test, Analyze) to pass before merging"
 
       - name: Comment on PR (first time only)
         if: github.event.action == 'opened'
@@ -35,7 +35,7 @@ jobs:
             ### Required Settings:
             - ✅ Prevent force pushes and deletions
             - ✅ Require status checks to pass before merging
-              - \`build\` (CI Pipeline)
+              - \`Lint and Test\` (CI Pipeline)
               - \`Analyze\` (CodeQL Security Scan)
 
             ### Documentation:
