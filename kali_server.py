@@ -139,7 +139,7 @@ class CommandExecutor:
 
 def execute_command(command: list) -> Dict[str, Any]:
     """
-    Execute a shell command and return the result
+    Execute a command and return the result
     
     Args:
         command: The command to execute, as a list of strings
