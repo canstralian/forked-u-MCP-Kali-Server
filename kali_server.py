@@ -29,13 +29,24 @@ API_PORT = int(os.environ.get("API_PORT", 5000))
 DEBUG_MODE = os.environ.get("DEBUG_MODE", "0").lower() in ("1", "true", "yes", "y")
 COMMAND_TIMEOUT = 180  # 5 minutes default timeout
 
+# Only allow execution of these command names via the /api/command endpoint
+# Add to this dictionary as needed for safe operations
+COMMAND_ALLOWLIST = {
+    "list": ["ls", "-l"],
+    "stat": ["stat", "/etc/passwd"],
+    "uptime": ["uptime"],
+    "whoami": ["whoami"],
+    "date": ["date"],
+    # Add other safe commands here
+}
+
 app = Flask(__name__)
 
 
 class CommandExecutor:
     """Class to handle command execution with better timeout management"""
 
-    def __init__(self, command: str, timeout: int = COMMAND_TIMEOUT):
+    def __init__(self, command: list, timeout: int = COMMAND_TIMEOUT):
         self.command = command
         self.timeout = timeout
         self.process = None
@@ -63,7 +74,7 @@ class CommandExecutor:
         try:
             self.process = subprocess.Popen(
                 self.command,
-                shell=True,
+                shell=False,  # Run command directly, not via shell
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
@@ -126,12 +137,12 @@ class CommandExecutor:
             }
 
 
-def execute_command(command: str) -> Dict[str, Any]:
+def execute_command(command: list) -> Dict[str, Any]:
     """
     Execute a shell command and return the result
     
     Args:
-        command: The command to execute
+        command: The command to execute, as a list of strings
         
     Returns:
         A dictionary containing the stdout, stderr, and return code
@@ -142,18 +153,19 @@ def execute_command(command: str) -> Dict[str, Any]:
 
 @app.route("/api/command", methods=["POST"])
 def generic_command():
-    """Execute any command provided in the request."""
+    """Execute a safe command from the allowlist provided in the request."""
     try:
         params = request.json
-        command = params.get("command", "")
+        action = params.get("action", "")
 
-        if not command:
-            logger.warning("Command endpoint called without command parameter")
+        if not action or action not in COMMAND_ALLOWLIST:
+            logger.warning(f"Command endpoint called with unknown or missing action parameter: {action}")
             return jsonify({
-                "error": "Command parameter is required"
+                "error": "Action parameter is required and must be one of: " + ", ".join(COMMAND_ALLOWLIST.keys())
             }), 400
 
-        result = execute_command(command)
+        command_to_run = COMMAND_ALLOWLIST[action]
+        result = execute_command(command_to_run)
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error in command endpoint: {str(e)}")
