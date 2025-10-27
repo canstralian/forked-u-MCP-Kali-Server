@@ -9,18 +9,16 @@ import logging
 import os
 import subprocess
 import sys
-import traceback
+import tempfile
 import threading
-from typing import Dict, Any
-from flask import Flask, request, jsonify
+import traceback
+from typing import Any, Dict
+
+from flask import Flask, jsonify, request
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
 
@@ -59,17 +57,17 @@ class CommandExecutor:
 
     def _read_stdout(self):
         """Thread function to continuously read stdout"""
-        for line in iter(self.process.stdout.readline, ''):
+        for line in iter(self.process.stdout.readline, ""):
             self.stdout_data += line
 
     def _read_stderr(self):
         """Thread function to continuously read stderr"""
-        for line in iter(self.process.stderr.readline, ''):
+        for line in iter(self.process.stderr.readline, ""):
             self.stderr_data += line
 
     def execute(self) -> Dict[str, Any]:
         """Execute the command and handle timeout gracefully"""
-        logger.info(f"Executing command: {self.command}")
+        logger.info("Executing command: %s", self.command)
 
         try:
             self.process = subprocess.Popen(
@@ -78,7 +76,7 @@ class CommandExecutor:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                bufsize=1  # Line buffered
+                bufsize=1,  # Line buffered
             )
 
             # Start threads to read output continuously
@@ -98,7 +96,7 @@ class CommandExecutor:
             except subprocess.TimeoutExpired:
                 # Process timed out but we might have partial results
                 self.timed_out = True
-                logger.warning(f"Command timed out after {self.timeout} seconds. Terminating process.")
+                logger.warning("Command timed out after %s seconds. Terminating process.", self.timeout)
 
                 # Try to terminate gracefully first
                 self.process.terminate()
@@ -121,11 +119,11 @@ class CommandExecutor:
                 "return_code": self.return_code,
                 "success": success,
                 "timed_out": self.timed_out,
-                "partial_results": self.timed_out and (self.stdout_data or self.stderr_data)
+                "partial_results": self.timed_out and (self.stdout_data or self.stderr_data),
             }
 
         except Exception as e:
-            logger.error(f"Error executing command: {str(e)}")
+            logger.error("Error executing command: %s", str(e))
             logger.error(traceback.format_exc())
             return {
                 "stdout": self.stdout_data,
@@ -133,17 +131,17 @@ class CommandExecutor:
                 "return_code": -1,
                 "success": False,
                 "timed_out": False,
-                "partial_results": bool(self.stdout_data or self.stderr_data)
+                "partial_results": bool(self.stdout_data or self.stderr_data),
             }
 
 
 def execute_command(command: list) -> Dict[str, Any]:
     """
     Execute a command and return the result
-    
+
     Args:
         command: The command to execute, as a list of strings
-        
+
     Returns:
         A dictionary containing the stdout, stderr, and return code
     """
@@ -159,20 +157,21 @@ def generic_command():
         action = params.get("action", "")
 
         if not action or action not in COMMAND_ALLOWLIST:
-            logger.warning(f"Command endpoint called with unknown or missing action parameter: {action}")
-            return jsonify({
-                "error": "Action parameter is required and must be one of: " + ", ".join(COMMAND_ALLOWLIST.keys())
-            }), 400
+            logger.warning("Command endpoint called with unknown or missing action parameter: %s", action)
+            return (
+                jsonify(
+                    {"error": "Action parameter is required and must be one of: " + ", ".join(COMMAND_ALLOWLIST.keys())}
+                ),
+                400,
+            )
 
         command_to_run = COMMAND_ALLOWLIST[action]
         result = execute_command(command_to_run)
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in command endpoint: {str(e)}")
+        logger.error("Error in command endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.route("/api/tools/nmap", methods=["POST"])
@@ -187,29 +186,26 @@ def nmap():
 
         if not target:
             logger.warning("Nmap called without target parameter")
-            return jsonify({
-                "error": "Target parameter is required"
-            }), 400
+            return jsonify({"error": "Target parameter is required"}), 400
 
-        command = f"nmap {scan_type}"
+        # Build command as a list to prevent command injection
+        command = ["nmap"]
+        command.extend(scan_type.split())
 
         if ports:
-            command += f" -p {ports}"
+            command.extend(["-p", ports])
 
         if additional_args:
-            # Basic validation for additional args - more sophisticated validation would be better
-            command += f" {additional_args}"
+            command.extend(additional_args.split())
 
-        command += f" {target}"
+        command.append(target)
 
         result = execute_command(command)
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in nmap endpoint: {str(e)}")
+        logger.error("Error in nmap endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.route("/api/tools/gobuster", methods=["POST"])
@@ -224,30 +220,25 @@ def gobuster():
 
         if not url:
             logger.warning("Gobuster called without URL parameter")
-            return jsonify({
-                "error": "URL parameter is required"
-            }), 400
+            return jsonify({"error": "URL parameter is required"}), 400
 
         # Validate mode
         if mode not in ["dir", "dns", "fuzz", "vhost"]:
-            logger.warning(f"Invalid gobuster mode: {mode}")
-            return jsonify({
-                "error": f"Invalid mode: {mode}. Must be one of: dir, dns, fuzz, vhost"
-            }), 400
+            logger.warning("Invalid gobuster mode: %s", mode)
+            return jsonify({"error": f"Invalid mode: {mode}. Must be one of: dir, dns, fuzz, vhost"}), 400
 
-        command = f"gobuster {mode} -u {url} -w {wordlist}"
+        # Build command as a list to prevent command injection
+        command = ["gobuster", mode, "-u", url, "-w", wordlist]
 
         if additional_args:
-            command += f" {additional_args}"
+            command.extend(additional_args.split())
 
         result = execute_command(command)
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in gobuster endpoint: {str(e)}")
+        logger.error("Error in gobuster endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.route("/api/tools/dirb", methods=["POST"])
@@ -261,23 +252,20 @@ def dirb():
 
         if not url:
             logger.warning("Dirb called without URL parameter")
-            return jsonify({
-                "error": "URL parameter is required"
-            }), 400
+            return jsonify({"error": "URL parameter is required"}), 400
 
-        command = f"dirb {url} {wordlist}"
+        # Build command as a list to prevent command injection
+        command = ["dirb", url, wordlist]
 
         if additional_args:
-            command += f" {additional_args}"
+            command.extend(additional_args.split())
 
         result = execute_command(command)
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in dirb endpoint: {str(e)}")
+        logger.error("Error in dirb endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.route("/api/tools/nikto", methods=["POST"])
@@ -290,23 +278,20 @@ def nikto():
 
         if not target:
             logger.warning("Nikto called without target parameter")
-            return jsonify({
-                "error": "Target parameter is required"
-            }), 400
+            return jsonify({"error": "Target parameter is required"}), 400
 
-        command = f"nikto -h {target}"
+        # Build command as a list to prevent command injection
+        command = ["nikto", "-h", target]
 
         if additional_args:
-            command += f" {additional_args}"
+            command.extend(additional_args.split())
 
         result = execute_command(command)
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in nikto endpoint: {str(e)}")
+        logger.error("Error in nikto endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.route("/api/tools/sqlmap", methods=["POST"])
@@ -320,26 +305,23 @@ def sqlmap():
 
         if not url:
             logger.warning("SQLMap called without URL parameter")
-            return jsonify({
-                "error": "URL parameter is required"
-            }), 400
+            return jsonify({"error": "URL parameter is required"}), 400
 
-        command = f"sqlmap -u {url} --batch"
+        # Build command as a list to prevent command injection
+        command = ["sqlmap", "-u", url, "--batch"]
 
         if data:
-            command += f" --data=\"{data}\""
+            command.extend(["--data", data])
 
         if additional_args:
-            command += f" {additional_args}"
+            command.extend(additional_args.split())
 
         result = execute_command(command)
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in sqlmap endpoint: {str(e)}")
+        logger.error("Error in sqlmap endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.route("/api/tools/metasploit", methods=["POST"])
@@ -352,14 +334,7 @@ def metasploit():
 
         if not module:
             logger.warning("Metasploit called without module parameter")
-            return jsonify({
-                "error": "Module parameter is required"
-            }), 400
-
-        # Format options for Metasploit
-        options_str = ""
-        for key, value in options.items():
-            options_str += f" {key}={value}"
+            return jsonify({"error": "Module parameter is required"}), 400
 
         # Create an MSF resource script
         resource_content = f"use {module}\n"
@@ -367,27 +342,27 @@ def metasploit():
             resource_content += f"set {key} {value}\n"
         resource_content += "exploit\n"
 
-        # Save resource script to a temporary file
-        resource_file = "/tmp/mcp_msf_resource.rc"
-        with open(resource_file, "w") as f:
-            f.write(resource_content)
-
-        command = f"msfconsole -q -r {resource_file}"
-        result = execute_command(command)
-
-        # Clean up the temporary file
+        # Save resource script to a secure temporary file
+        fd, resource_file = tempfile.mkstemp(suffix=".rc", prefix="mcp_msf_")
         try:
-            os.remove(resource_file)
-        except Exception as e:
-            logger.warning(f"Error removing temporary resource file: {str(e)}")
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(resource_content)
+
+            # Build command as a list to prevent command injection
+            command = ["msfconsole", "-q", "-r", resource_file]
+            result = execute_command(command)
+        finally:
+            # Clean up the temporary file
+            try:
+                os.remove(resource_file)
+            except Exception as e:
+                logger.warning("Error removing temporary resource file: %s", str(e))
 
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in metasploit endpoint: {str(e)}")
+        logger.error("Error in metasploit endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.route("/api/tools/hydra", methods=["POST"])
@@ -405,41 +380,36 @@ def hydra():
 
         if not target or not service:
             logger.warning("Hydra called without target or service parameter")
-            return jsonify({
-                "error": "Target and service parameters are required"
-            }), 400
+            return jsonify({"error": "Target and service parameters are required"}), 400
 
         if not (username or username_file) or not (password or password_file):
             logger.warning("Hydra called without username/password parameters")
-            return jsonify({
-                "error": "Username/username_file and password/password_file are required"
-            }), 400
+            return jsonify({"error": "Username/username_file and password/password_file are required"}), 400
 
-        command = f"hydra -t 4"
+        # Build command as a list to prevent command injection
+        command = ["hydra", "-t", "4"]
 
         if username:
-            command += f" -l {username}"
+            command.extend(["-l", username])
         elif username_file:
-            command += f" -L {username_file}"
+            command.extend(["-L", username_file])
 
         if password:
-            command += f" -p {password}"
+            command.extend(["-p", password])
         elif password_file:
-            command += f" -P {password_file}"
+            command.extend(["-P", password_file])
 
         if additional_args:
-            command += f" {additional_args}"
+            command.extend(additional_args.split())
 
-        command += f" {target} {service}"
+        command.extend([target, service])
 
         result = execute_command(command)
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in hydra endpoint: {str(e)}")
+        logger.error("Error in hydra endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.route("/api/tools/john", methods=["POST"])
@@ -454,31 +424,28 @@ def john():
 
         if not hash_file:
             logger.warning("John called without hash_file parameter")
-            return jsonify({
-                "error": "Hash file parameter is required"
-            }), 400
+            return jsonify({"error": "Hash file parameter is required"}), 400
 
-        command = f"john"
+        # Build command as a list to prevent command injection
+        command = ["john"]
 
         if format_type:
-            command += f" --format={format_type}"
+            command.append(f"--format={format_type}")
 
         if wordlist:
-            command += f" --wordlist={wordlist}"
+            command.append(f"--wordlist={wordlist}")
 
         if additional_args:
-            command += f" {additional_args}"
+            command.extend(additional_args.split())
 
-        command += f" {hash_file}"
+        command.append(hash_file)
 
         result = execute_command(command)
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in john endpoint: {str(e)}")
+        logger.error("Error in john endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.route("/api/tools/wpscan", methods=["POST"])
@@ -491,23 +458,20 @@ def wpscan():
 
         if not url:
             logger.warning("WPScan called without URL parameter")
-            return jsonify({
-                "error": "URL parameter is required"
-            }), 400
+            return jsonify({"error": "URL parameter is required"}), 400
 
-        command = f"wpscan --url {url}"
+        # Build command as a list to prevent command injection
+        command = ["wpscan", "--url", url]
 
         if additional_args:
-            command += f" {additional_args}"
+            command.extend(additional_args.split())
 
         result = execute_command(command)
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in wpscan endpoint: {str(e)}")
+        logger.error("Error in wpscan endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 @app.route("/api/tools/enum4linux", methods=["POST"])
@@ -520,20 +484,19 @@ def enum4linux():
 
         if not target:
             logger.warning("Enum4linux called without target parameter")
-            return jsonify({
-                "error": "Target parameter is required"
-            }), 400
+            return jsonify({"error": "Target parameter is required"}), 400
 
-        command = f"enum4linux {additional_args} {target}"
+        # Build command as a list to prevent command injection
+        command = ["enum4linux"]
+        command.extend(additional_args.split())
+        command.append(target)
 
         result = execute_command(command)
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error in enum4linux endpoint: {str(e)}")
+        logger.error("Error in enum4linux endpoint: %s", str(e))
         logger.error(traceback.format_exc())
-        return jsonify({
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 
 # Health check endpoint
@@ -546,31 +509,22 @@ def health_check():
 
     for tool in essential_tools:
         try:
-            result = execute_command(f"which {tool}")
+            result = execute_command(["which", tool])
             tools_status[tool] = result["success"]
-        except:
+        except Exception as e:
+            logger.debug("Error checking tool %s: %s", tool, str(e))
             tools_status[tool] = False
 
     all_essential_tools_available = all(tools_status.values())
 
-    return jsonify({
-        "status": "healthy",
-        "message": "Kali Linux Tools API Server is running",
-        "tools_status": tools_status,
-        "all_essential_tools_available": all_essential_tools_available
-    })
-
-
-@app.route("/mcp/capabilities", methods=["GET"])
-def get_capabilities():
-    # Return tool capabilities similar to our existing MCP server
-    pass
-
-
-@app.route("/mcp/tools/kali_tools/<tool_name>", methods=["POST"])
-def execute_tool(tool_name):
-    # Direct tool execution without going through the API server
-    pass
+    return jsonify(
+        {
+            "status": "healthy",
+            "message": "Kali Linux Tools API Server is running",
+            "tools_status": tools_status,
+            "all_essential_tools_available": all_essential_tools_available,
+        }
+    )
 
 
 def parse_args():
@@ -579,6 +533,7 @@ def parse_args():
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     parser.add_argument("--port", type=int, default=API_PORT, help=f"Port for the API server (default: {API_PORT})")
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -592,5 +547,5 @@ if __name__ == "__main__":
     if args.port != API_PORT:
         API_PORT = args.port
 
-    logger.info(f"Starting Kali Linux Tools API Server on port {API_PORT}")
+    logger.info("Starting Kali Linux Tools API Server on port %s", API_PORT)
     app.run(host="0.0.0.0", port=API_PORT, debug=DEBUG_MODE)
