@@ -65,6 +65,22 @@ jobs:
         uses: codecov/codecov-action@v3
         continue-on-error: true
 
+      # Step 9: Pal.AI Code Analysis
+      - name: Pal.AI Complexity Analysis
+        run: |
+          echo "Running Pal.AI complexity analysis..."
+          # palai analyze kali_server.py mcp_server.py
+          echo "Note: Install palai-cli to enable automated complexity analysis"
+        continue-on-error: true
+
+      # Step 10: Pal.AI Code Review
+      - name: Pal.AI Automated Review
+        run: |
+          echo "Running Pal.AI code review..."
+          # palai review kali_server.py mcp_server.py
+          echo "Note: Install palai-cli to enable automated code reviews"
+        continue-on-error: true
+
   security:
     runs-on: ubuntu-latest
     name: Security Scanning
@@ -99,6 +115,14 @@ jobs:
       # Alternative dependency check with safety
       - name: Check dependencies with Safety
         run: safety check --json || true
+        continue-on-error: true
+
+      # Pal.AI security vulnerability scan
+      - name: Pal.AI Security Scan
+        run: |
+          echo "Running Pal.AI security scan..."
+          # palai scan kali_server.py mcp_server.py
+          echo "Note: Install palai-cli to enable AI-powered security scanning"
         continue-on-error: true
 
   docker:

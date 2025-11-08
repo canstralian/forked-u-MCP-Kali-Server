@@ -1,0 +1,136 @@
+# Pal.AI Agent Configuration
+# This file configures Pal.AI agent commands for automated code analysis,
+# documentation, and security scanning in the CI/CD pipeline
+
+version: 1.0
+
+# Project settings
+project:
+  name: "MCP Kali Server"
+  language: python
+  version: "3.11"
+
+# Files to analyze
+targets:
+  include:
+    - "kali_server.py"
+    - "mcp_server.py"
+    - "test_basic.py"
+  exclude:
+    - "venv/**"
+    - ".git/**"
+    - "__pycache__/**"
+    - "*.pyc"
+
+# Command configurations
+commands:
+  # Documentation generation
+  document:
+    enabled: true
+    default_flavor: "standard"
+    output_format: "markdown"
+    flavors:
+      standard:
+        enabled: true
+        description: "Standard documentation with function/class level comments"
+      line-by-line:
+        enabled: true
+        description: "Add detailed inline comments for complex logic"
+      verbose:
+        enabled: true
+        description: "Comprehensive documentation with examples and edge cases"
+
+  # Code explanation
+  explain:
+    enabled: true
+    include_examples: true
+    explain_logic: true
+    explain_structure: true
+    explain_behavior: true
+
+  # Complexity analysis
+  analyze:
+    enabled: true
+    compute_time_complexity: true
+    compute_space_complexity: true
+    warn_on_complexity: "O(n^2)"
+    report_format: "markdown"
+
+  # Security scanning
+  scan:
+    enabled: true
+    scan_types:
+      - "sql-injection"
+      - "xss"
+      - "command-injection"
+      - "path-traversal"
+      - "insecure-deserialization"
+      - "hardcoded-secrets"
+    severity_threshold: "medium"
+    fail_on_critical: false
+
+  # Code review
+  review:
+    enabled: true
+    check_best_practices: true
+    check_maintainability: true
+    check_performance: true
+    check_security: true
+    provide_suggestions: true
+    style_guide: "pep8"
+
+  # Code refactoring
+  refactor:
+    enabled: true
+    focus_areas:
+      - "readability"
+      - "maintainability"
+      - "performance"
+      - "security"
+    preserve_functionality: true
+
+  # Code simplification
+  simplify:
+    enabled: true
+    max_function_length: 50
+    max_complexity: 10
+    prefer_readability: true
+
+  # Code fixing
+  fix:
+    enabled: true
+    auto_fix: false  # Require manual review
+    fix_types:
+      - "syntax-errors"
+      - "type-errors"
+      - "security-issues"
+      - "style-violations"
+
+  # Code rephrasing
+  rephrase:
+    enabled: true
+    preserve_logic: true
+    improve_naming: true
+    improve_comments: true
+
+# CI/CD Integration
+ci_integration:
+  enabled: true
+  run_on_pr: true
+  run_on_push: true
+  post_results_as_comment: true
+  fail_on_critical_issues: false
+
+# Output settings
+output:
+  format: "markdown"
+  verbose: true
+  save_to_file: true
+  output_directory: ".palai-reports"
+
+# Notification settings
+notifications:
+  enabled: false
+  notify_on:
+    - "critical-issues"
+    - "security-vulnerabilities"

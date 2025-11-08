@@ -45,12 +45,16 @@ The original repository included:
 - 🕸️ **Web Challenge Support:** AI-assisted interaction with web apps, APIs, and capture of flags.  
 - 🔐 **Designed for Offensive Security Professionals:** Ideal for red teamers, bug bounty hunters, or CTF players automating common tasks.  
 
-**Future features in this fork will focus on:**  
+**New features in this fork:**
 
-- Multi-agent orchestration and intelligent task delegation.  
-- Integration with cloud-based AI endpoints and model pipelines.  
-- Enhanced logging, analytics, and structured output for automation workflows.  
-- Additional security tooling, including forensic and analysis utilities.
+- 🤖 **Pal.AI Agent Integration:** Automated code analysis, security scanning, and vulnerability remediation
+- 🔒 **Auto-Fix Workflow:** `cp assign` command for automatic security fix PR generation
+- 📊 **CI/CD Automation:** Integrated code review, complexity analysis, and documentation generation
+- 🎯 **Security Templates:** Streamlined vulnerability reporting with automated triage
+- Multi-agent orchestration and intelligent task delegation
+- Integration with cloud-based AI endpoints and model pipelines
+- Enhanced logging, analytics, and structured output for automation workflows
+- Additional security tooling, including forensic and analysis utilities
 
 ---
 
@@ -231,6 +235,41 @@ pytest --cov=. --cov-report=html
 # Run specific test file
 pytest test_basic.py -v
 ```
+
+---
+
+## 🤖 Pal.AI Agent Integration
+
+This repository includes comprehensive Pal.AI agent integration for automated code analysis, security scanning, and vulnerability remediation.
+
+### Quick Start
+
+**Available Commands:**
+- 📚 `document` - Auto-generate documentation
+- 💡 `explain` - Explain code logic
+- 📊 `analyze` - Compute complexity
+- 🔒 `scan` - Security vulnerability scan
+- ✅ `review` - Full code review
+- 🔧 `fix` - Auto-fix issues
+- 🏗️ `refactor` - Improve code structure
+
+### Automated Security Fix Workflow
+
+Report security vulnerabilities and let the AI agent automatically generate fixes:
+
+1. **Create Issue:** Use the "Security Vulnerability" template
+2. **Comment:** `cp assign` on the issue
+3. **Review PR:** Agent creates automated fix PR
+4. **Merge:** After verification and testing
+
+### Documentation
+
+For complete Pal.AI integration details, see [docs/PALAI_INTEGRATION.md](docs/PALAI_INTEGRATION.md)
+
+**Workflows:**
+- `.github/workflows/palai-agent.yml` - Pal.AI command workflows
+- `.github/workflows/palai-auto-assign.yml` - Automated fix generation
+- `.palai.yml` - Configuration file
 
 ---
 

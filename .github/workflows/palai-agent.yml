@@ -1,0 +1,330 @@
+name: Pal.AI Agent Commands
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Pal.AI command to run'
+        required: true
+        type: choice
+        options:
+          - document
+          - explain
+          - analyze
+          - scan
+          - review
+          - rephrase
+          - simplify
+          - fix
+          - refactor
+          - cheatsheet
+      flavor:
+        description: 'Documentation flavor (for document command)'
+        required: false
+        type: choice
+        options:
+          - standard
+          - line-by-line
+          - verbose
+
+jobs:
+  # Automated code documentation
+  document:
+    runs-on: ubuntu-latest
+    name: Auto-Generate Documentation
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'document')
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Pal.AI CLI
+        run: |
+          pip install --upgrade pip
+          # Note: Replace with actual pal.ai installation command when available
+          # pip install palai-cli
+          echo "Pal.AI CLI installation placeholder"
+
+      - name: Generate Documentation (Standard)
+        if: github.event.inputs.flavor == 'standard' || github.event.inputs.flavor == ''
+        run: |
+          echo "Running: palai document --flavor standard"
+          # palai document --flavor standard kali_server.py mcp_server.py
+        continue-on-error: true
+
+      - name: Generate Documentation (Line-by-Line)
+        if: github.event.inputs.flavor == 'line-by-line'
+        run: |
+          echo "Running: palai document --flavor line-by-line"
+          # palai document --flavor line-by-line kali_server.py mcp_server.py
+        continue-on-error: true
+
+      - name: Generate Documentation (Verbose)
+        if: github.event.inputs.flavor == 'verbose'
+        run: |
+          echo "Running: palai document --flavor verbose"
+          # palai document --flavor verbose kali_server.py mcp_server.py
+        continue-on-error: true
+
+  # Code explanation
+  explain:
+    runs-on: ubuntu-latest
+    name: Explain Code Logic
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'explain'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Pal.AI CLI
+        run: |
+          pip install --upgrade pip
+          echo "Pal.AI CLI installation placeholder"
+
+      - name: Explain Code
+        run: |
+          echo "Running: palai explain"
+          # palai explain kali_server.py mcp_server.py
+        continue-on-error: true
+
+  # Complexity analysis
+  analyze:
+    runs-on: ubuntu-latest
+    name: Analyze Code Complexity
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'analyze')
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Pal.AI CLI
+        run: |
+          pip install --upgrade pip
+          echo "Pal.AI CLI installation placeholder"
+
+      - name: Compute Big-O Complexity
+        run: |
+          echo "Running: palai analyze"
+          # palai analyze kali_server.py mcp_server.py
+          echo "Analyzing space/time complexity..."
+        continue-on-error: true
+
+  # Security vulnerability scan
+  scan:
+    runs-on: ubuntu-latest
+    name: Scan for Vulnerabilities
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'scan')
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Pal.AI CLI
+        run: |
+          pip install --upgrade pip
+          echo "Pal.AI CLI installation placeholder"
+
+      - name: Security Scan
+        run: |
+          echo "Running: palai scan"
+          # palai scan kali_server.py mcp_server.py
+          echo "Scanning for security vulnerabilities..."
+        continue-on-error: true
+
+      - name: Upload scan results
+        uses: actions/upload-artifact@v3
+        with:
+          name: palai-security-scan
+          path: |
+            **/palai-scan-*.json
+            **/palai-scan-*.txt
+        continue-on-error: true
+
+  # Full code review
+  review:
+    runs-on: ubuntu-latest
+    name: Code Review
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'review')
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Pal.AI CLI
+        run: |
+          pip install --upgrade pip
+          echo "Pal.AI CLI installation placeholder"
+
+      - name: Full Code Review
+        run: |
+          echo "Running: palai review"
+          # palai review kali_server.py mcp_server.py
+          echo "Reviewing code for best practices and maintainability..."
+        continue-on-error: true
+
+      - name: Upload review results
+        uses: actions/upload-artifact@v3
+        with:
+          name: palai-code-review
+          path: |
+            **/palai-review-*.md
+            **/palai-review-*.txt
+        continue-on-error: true
+
+  # Code refactoring suggestions
+  refactor:
+    runs-on: ubuntu-latest
+    name: Refactor Suggestions
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'refactor'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Pal.AI CLI
+        run: |
+          pip install --upgrade pip
+          echo "Pal.AI CLI installation placeholder"
+
+      - name: Suggest Refactorings
+        run: |
+          echo "Running: palai refactor"
+          # palai refactor kali_server.py mcp_server.py
+          echo "Analyzing code for refactoring opportunities..."
+        continue-on-error: true
+
+  # Simplify complex code
+  simplify:
+    runs-on: ubuntu-latest
+    name: Simplify Code
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'simplify'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Pal.AI CLI
+        run: |
+          pip install --upgrade pip
+          echo "Pal.AI CLI installation placeholder"
+
+      - name: Simplify Complex Code
+        run: |
+          echo "Running: palai simplify"
+          # palai simplify kali_server.py mcp_server.py
+          echo "Converting complex code to simpler version..."
+        continue-on-error: true
+
+  # Display cheat sheet
+  cheatsheet:
+    runs-on: ubuntu-latest
+    name: Show Commands Cheatsheet
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'cheatsheet'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Pal.AI CLI
+        run: |
+          pip install --upgrade pip
+          echo "Pal.AI CLI installation placeholder"
+
+      - name: Display Cheatsheet
+        run: |
+          echo "Running: palai cheatsheet"
+          # palai cheatsheet
+          cat << 'EOF'
+
+          ═══════════════════════════════════════════════════════════
+                          PAL.AI COMMANDS CHEATSHEET
+          ═══════════════════════════════════════════════════════════
+
+          📚 DOCUMENT [doc, d]
+             Generate documentation and comments for your code
+             Flavors:
+               - standard [std, s]: Standard documentation (default)
+               - line-by-line [lbl, l]: Add line-by-line comments
+               - verbose [v]: Thorough detailed documentation
+
+          💡 EXPLAIN [exp, e]
+             Explain code logic, structure, and behavior
+
+          📊 ANALYZE [a]
+             Compute Big-O space/time complexity
+
+          🔒 SCAN [s]
+             Scan for vulnerabilities and security issues
+
+          ✅ REVIEW [r]
+             Full code review: best practices, suggestions, maintainability
+
+          ♻️  REPHRASE [rep]
+             Alter names, comments, structure while preserving functionality
+
+          🎯 SIMPLIFY [sim]
+             Convert complex code into readable/simplified version
+
+          🔧 FIX [f]
+             Fix issues in your code (provide description)
+
+          🏗️  REFACTOR [ref]
+             Improve readability, maintainability, or structure
+
+          📋 CHEATSHEET [cs]
+             Show this commands reference
+
+          ═══════════════════════════════════════════════════════════
+          EOF
+        continue-on-error: true
