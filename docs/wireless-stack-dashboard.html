@@ -1,0 +1,585 @@
+<!-- Chosen Palette: Cyberpunk Neon (Dark Slate, Cyan, Purple, Pink) -->
+
+<!-- Application Structure Plan:
+    1. **Header & Context**: Title, intro text explaining the tiered analysis of the wireless stack.
+    2. **Strategic Dashboard (KPIs)**: High-level metrics (Total Tools, Core vs. Support Split, Critical Gaps).
+    3. **Visual Analytics Section**:
+        - Radar Chart: Visualizes the stack's maturity (High 802.11 vs. Low RF/BLE).
+        - Donut Chart: Composition of the stack (Tier 1 vs. Tier 2).
+        - Horizontal Bar Chart: Distribution of tools by specific attack targets (e.g., Handshakes vs. WPS).
+    4. **Interactive Tool Matrix**: A filterable grid display of all tools mentioned in the report. Users can toggle between "Core Offensive" and "Support" views. Detailed cards show function, targets, and components.
+    5. **Operational Workflow**: A CSS-based flow diagram showing the logical progression from Tier 2 preparation to Tier 1 execution.
+    6. **Gap Analysis**: A distinct alert section highlighting the missing capabilities (SDR, BLE, RFID) identified in the report.
+-->
+
+<!-- Visualization & Content Choices:
+    1. **Capability Radar**:
+        - Goal: Relationships/Compare.
+        - Method: Chart.js Radar.
+        - Justification: Excellent for showing the skew towards Wi-Fi (802.11) and the near-zero coverage of other protocols.
+    2. **Stack Composition**:
+        - Goal: Compare.
+        - Method: Chart.js Donut.
+        - Justification: Quick visual ratio of Offensive (Tier 1) to Support (Tier 2) tools.
+    3. **Attack Surface Distribution**:
+        - Goal: Compare.
+        - Method: Chart.js Horizontal Bar.
+        - Justification: Quantifies "Attack Targets" to show where the stack focuses most (WPA Handshakes).
+    4. **Tool Explorer**:
+        - Goal: Inform/Organize.
+        - Method: HTML Grid + JS Filtering.
+        - Justification: Allows users to drill down into specific tool details without clutter.
+-->
+
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireless Attack Stack Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cyber: {
+                            dark: '#0f172a',    /* Slate 900 */
+                            card: '#1e293b',    /* Slate 800 */
+                            border: '#334155',  /* Slate 700 */
+                            cyan: '#22d3ee',    /* Cyan 400 */
+                            purple: '#c084fc',  /* Purple 400 */
+                            pink: '#f472b6',    /* Pink 400 */
+                            red: '#ef4444',     /* Red 500 */
+                            green: '#4ade80',   /* Green 400 */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+
+        /* Chart Container Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* CSS Arrow for Workflow (No SVG) */
+        .arrow-right {
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-left: 12px solid #475569;
+            display: inline-block;
+        }
+
+        .arrow-down {
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid #475569;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        /* Neon Glow Utility */
+        .glow-cyan { text-shadow: 0 0 10px rgba(34, 211, 238, 0.4); }
+        .glow-purple { text-shadow: 0 0 10px rgba(192, 132, 252, 0.4); }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyber-cyan selection:text-cyber-dark">
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 bg-cyber-dark/90 backdrop-blur border-b border-cyber-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">📡</span>
+                    <span class="font-bold text-xl tracking-tight font-mono text-white">WIRELESS<span class="text-cyber-cyan">STACK</span>.ANALYZER</span>
+                </div>
+                <div class="hidden md:flex gap-6 text-sm font-semibold text-slate-400">
+                    <a href="#dashboard" class="hover:text-cyber-cyan transition-colors">Dashboard</a>
+                    <a href="#matrix" class="hover:text-cyber-purple transition-colors">Tool Matrix</a>
+                    <a href="#gaps" class="hover:text-cyber-red transition-colors">Gaps</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+
+        <!-- INTRO & KPI SECTION -->
+        <section id="dashboard" class="space-y-8">
+            <div class="text-center md:text-left">
+                <h1 class="text-3xl md:text-5xl font-bold text-white mb-4">Operational Capability Report</h1>
+                <p class="text-slate-400 max-w-3xl text-lg leading-relaxed">
+                    A breakdown of the identified wireless attack tools categorized into <span class="text-cyber-cyan font-bold">Core Offensive Tooling</span> (Tier 1) and <span class="text-cyber-purple font-bold">Support Utilities</span> (Tier 2). This analysis highlights the strong focus on 802.11 Wi-Fi exploitation while exposing critical gaps in the broader RF spectrum.
+                </p>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- KPI 1 -->
+                <div class="bg-cyber-card border-t-4 border-cyber-cyan p-6 rounded shadow-lg hover:shadow-cyan-500/10 transition-shadow">
+                    <h3 class="text-xs font-mono uppercase tracking-widest text-slate-500">Total Tools Identified</h3>
+                    <div class="text-4xl font-bold text-white mt-2">10</div>
+                    <p class="text-sm text-cyber-cyan mt-1">Across 2 Tiers</p>
+                </div>
+                <!-- KPI 2 -->
+                <div class="bg-cyber-card border-t-4 border-cyber-purple p-6 rounded shadow-lg hover:shadow-purple-500/10 transition-shadow">
+                    <h3 class="text-xs font-mono uppercase tracking-widest text-slate-500">Primary Focus</h3>
+                    <div class="text-2xl font-bold text-white mt-3 truncate">802.11 Wi-Fi</div>
+                    <p class="text-sm text-cyber-purple mt-1">Standard Protocol</p>
+                </div>
+                <!-- KPI 3 -->
+                <div class="bg-cyber-card border-t-4 border-cyber-pink p-6 rounded shadow-lg hover:shadow-pink-500/10 transition-shadow">
+                    <h3 class="text-xs font-mono uppercase tracking-widest text-slate-500">Top Attack Vector</h3>
+                    <div class="text-2xl font-bold text-white mt-3 truncate">Handshakes & Creds</div>
+                    <p class="text-sm text-cyber-pink mt-1">WPA/WPA2 Targets</p>
+                </div>
+                <!-- KPI 4 -->
+                <div class="bg-cyber-card border-t-4 border-cyber-red p-6 rounded shadow-lg hover:shadow-red-500/10 transition-shadow">
+                    <h3 class="text-xs font-mono uppercase tracking-widest text-slate-500">Critical Gaps</h3>
+                    <div class="text-4xl font-bold text-white mt-2">3</div>
+                    <p class="text-sm text-cyber-red mt-1">SDR, BLE, RFID</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISUAL ANALYTICS -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <!-- Radar Chart -->
+            <div class="bg-cyber-card rounded-xl border border-cyber-border p-6 shadow-xl flex flex-col">
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span class="text-cyber-cyan">◎</span> Capability Radar
+                    </h2>
+                    <p class="text-sm text-slate-400 mt-2">
+                        Visualizing the stack's coverage. The graph skews heavily towards 802.11 active attacks, showing near-zero capability in adjacent RF technologies.
+                    </p>
+                </div>
+                <div class="chart-container flex-grow">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Composition & Vector Analysis (Stacked) -->
+            <div class="space-y-8">
+                <!-- Donut Chart -->
+                <div class="bg-cyber-card rounded-xl border border-cyber-border p-6 shadow-xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">Stack Composition</h2>
+                        <span class="text-xs font-mono text-slate-500">TIER 1 vs TIER 2</span>
+                    </div>
+                    <p class="text-sm text-slate-400 mb-4">
+                        The arsenal is primarily offensive, with 60% of tools dedicated to direct exploitation (Tier 1) and 40% to support or augmentation (Tier 2).
+                    </p>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="donutChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Bar Chart -->
+                <div class="bg-cyber-card rounded-xl border border-cyber-border p-6 shadow-xl">
+                    <div class="mb-4">
+                        <h2 class="text-xl font-bold text-white">Top Attack Targets</h2>
+                    </div>
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INTERACTIVE TOOL MATRIX -->
+        <section id="matrix">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+                <div>
+                    <h2 class="text-3xl font-bold text-white">Tool Matrix Explorer</h2>
+                    <p class="text-slate-400 mt-2 max-w-2xl">
+                        Filter and explore the specific tools identified in the source report. Tier 1 tools focus on direct attacks, while Tier 2 tools handle preparation and specialized hardware.
+                    </p>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="bg-cyber-dark p-1 rounded-lg border border-cyber-border inline-flex">
+                    <button onclick="filterGrid('all')" id="btn-all" class="px-4 py-2 text-sm font-bold rounded-md transition-all bg-cyber-cyan text-cyber-dark">All</button>
+                    <button onclick="filterGrid('tier1')" id="btn-tier1" class="px-4 py-2 text-sm font-bold rounded-md transition-all text-slate-400 hover:text-white">Tier 1 (Offense)</button>
+                    <button onclick="filterGrid('tier2')" id="btn-tier2" class="px-4 py-2 text-sm font-bold rounded-md transition-all text-slate-400 hover:text-white">Tier 2 (Support)</button>
+                </div>
+            </div>
+
+            <!-- Grid Container -->
+            <div id="toolGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- Cards injected via JS -->
+            </div>
+        </section>
+
+        <!-- OPERATIONAL WORKFLOW -->
+        <section class="bg-cyber-card border border-cyber-border rounded-xl p-8 overflow-hidden">
+            <h2 class="text-2xl font-bold text-white mb-6">Operational Workflow Logic</h2>
+            <p class="text-slate-400 mb-8 max-w-3xl">
+                The breakdown implies a dependency flow. Support utilities (Tier 2) are often prerequisites for Core Offensive tools (Tier 1). For example, <code>macchanger</code> prepares the interface before <code>aircrack-ng</code> begins packet injection.
+            </p>
+
+            <div class="flex flex-col lg:flex-row justify-center items-center gap-4 lg:gap-8">
+
+                <!-- Step 1 -->
+                <div class="flex-1 w-full lg:max-w-xs group">
+                    <div class="bg-cyber-dark border border-cyber-purple p-6 rounded-lg relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-cyber-purple text-cyber-dark text-xs font-bold px-2 py-1">TIER 2</div>
+                        <h3 class="text-lg font-bold text-cyber-purple mb-2">1. Preparation</h3>
+                        <p class="text-sm text-slate-400 mb-4">Interface configuration and evasion.</p>
+                        <div class="font-mono text-xs text-slate-500 bg-cyber-card p-2 rounded">
+                            > macchanger -r wlan0<br>
+                            > airmon-ng start wlan0
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connector -->
+                <div class="hidden lg:block arrow-right"></div>
+                <div class="block lg:hidden arrow-down"></div>
+
+                <!-- Step 2 -->
+                <div class="flex-1 w-full lg:max-w-xs group">
+                    <div class="bg-cyber-dark border border-cyber-cyan p-6 rounded-lg relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-cyber-cyan text-cyber-dark text-xs font-bold px-2 py-1">TIER 1</div>
+                        <h3 class="text-lg font-bold text-cyber-cyan mb-2">2. Execution</h3>
+                        <p class="text-sm text-slate-400 mb-4">Active exploitation and capture.</p>
+                        <div class="font-mono text-xs text-slate-500 bg-cyber-card p-2 rounded">
+                            > airodump-ng wlan0mon<br>
+                            > aireplay-ng --deauth ...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connector -->
+                <div class="hidden lg:block arrow-right"></div>
+                <div class="block lg:hidden arrow-down"></div>
+
+                <!-- Step 3 -->
+                <div class="flex-1 w-full lg:max-w-xs group">
+                    <div class="bg-cyber-dark border border-cyber-pink p-6 rounded-lg relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-cyber-pink text-cyber-dark text-xs font-bold px-2 py-1">TIER 1</div>
+                        <h3 class="text-lg font-bold text-cyber-pink mb-2">3. Resolution</h3>
+                        <p class="text-sm text-slate-400 mb-4">Cracking or Credential Harvesting.</p>
+                        <div class="font-mono text-xs text-slate-500 bg-cyber-card p-2 rounded">
+                            > aircrack-ng capture.cap<br>
+                            > wifiphisher -p firmware
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- GAP ANALYSIS ALERT -->
+        <section id="gaps" class="bg-gradient-to-br from-cyber-red/10 to-transparent border border-cyber-red/30 rounded-xl p-8">
+            <div class="flex items-start gap-4">
+                <div class="text-3xl">⚠️</div>
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-2">Critical Capability Gaps</h2>
+                    <p class="text-slate-300 mb-6 max-w-4xl">
+                        To create a comprehensive "Mission Capability Profile" (MCP), the following missing domains identified in the report must be addressed. The current stack is blind to these vectors.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                <!-- Gap 1 -->
+                <div class="bg-cyber-dark/50 p-5 rounded border-l-4 border-cyber-red backdrop-blur-sm">
+                    <h3 class="text-lg font-bold text-white mb-2">SDR / Active RF</h3>
+                    <p class="text-xs text-slate-400 mb-3 uppercase tracking-wide">Missing Tooling</p>
+                    <ul class="text-sm font-mono text-cyber-red space-y-1">
+                        <li>- gnuradio</li>
+                        <li>- hackrf_tools</li>
+                        <li>- rfcat</li>
+                        <li>- gr-gsm</li>
+                    </ul>
+                </div>
+                <!-- Gap 2 -->
+                <div class="bg-cyber-dark/50 p-5 rounded border-l-4 border-cyber-red backdrop-blur-sm">
+                    <h3 class="text-lg font-bold text-white mb-2">BLE / Bluetooth</h3>
+                    <p class="text-xs text-slate-400 mb-3 uppercase tracking-wide">Missing Tooling</p>
+                    <ul class="text-sm font-mono text-cyber-red space-y-1">
+                        <li>- bleah</li>
+                        <li>- crackle</li>
+                        <li>- gatttool</li>
+                    </ul>
+                </div>
+                <!-- Gap 3 -->
+                <div class="bg-cyber-dark/50 p-5 rounded border-l-4 border-cyber-red backdrop-blur-sm">
+                    <h3 class="text-lg font-bold text-white mb-2">RFID / NFC</h3>
+                    <p class="text-xs text-slate-400 mb-3 uppercase tracking-wide">Missing Tooling</p>
+                    <ul class="text-sm font-mono text-cyber-red space-y-1">
+                        <li>- mfcuk</li>
+                        <li>- mfoc</li>
+                        <li>- proxmark3 utils</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <footer class="border-t border-cyber-border pt-8 pb-4 text-center">
+            <p class="text-slate-500 text-sm">Source Report: Wireless Attack Stack Breakdown | Tier 1 vs Tier 2 Analysis</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // --- DATA SOURCE ---
+        const toolsData = [
+            { name: "aircrack-ng suite", tier: "tier1", function: "Packet Injection & Cracking", targets: "WEP/WPA/WPA2 Handshakes", components: "airmon-ng, airodump-ng, aircrack-ng, aireplay-ng" },
+            { name: "wifite", tier: "tier1", function: "Automated Auditing", targets: "WEP/WPA/WPA2, WPS", components: "Automated wrapper" },
+            { name: "reaver / bully", tier: "tier1", function: "WPS Brute-Force", targets: "WPS Pins/Passwords", components: "reaver, bully, wash" },
+            { name: "airgeddon", tier: "tier1", function: "All-in-one Framework", targets: "WPA Handshakes, Evil Twin", components: "Bash orchestrator" },
+            { name: "wifiphisher", tier: "tier1", function: "Phishing / Rogue AP", targets: "Client Credentials", components: "wifiphisher" },
+            { name: "wifipumpkin3", tier: "tier1", function: "MITM Framework", targets: "Client Creds, Network Traffic", components: "wifipumpkin3, wp3, sslstrip3" },
+            { name: "macchanger", tier: "tier2", function: "Interface Prep / Evasion", targets: "Interface Identity (MAC)", components: "macchanger" },
+            { name: "fern-wifi-cracker", tier: "tier2", function: "Workflow Automation / GUI", targets: "WEP/WPA", components: "GUI Wrapper" },
+            { name: "bettercap", tier: "tier2", function: "Adv. MITM / Cross-Protocol", targets: "Traffic, BLE, HID", components: "bettercap, caplets" },
+            { name: "chirp", tier: "tier2", function: "Hardware Programming", targets: "SDR/Radio Config", components: "chirp" }
+        ];
+
+        // --- CHART HELPER FUNCTIONS ---
+
+        // Helper: Word Wrap for Labels (>16 chars)
+        function wrapLabel(label) {
+            if (label.length <= 16) return label;
+            const words = label.split(' ');
+            const lines = [];
+            let currentLine = words[0];
+            for (let i = 1; i < words.length; i++) {
+                if (currentLine.length + 1 + words[i].length <= 16) {
+                    currentLine += ' ' + words[i];
+                } else {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        // Helper: Tooltip Callback
+        const tooltipConfig = {
+            callbacks: {
+                title: function(tooltipItems) {
+                    const item = tooltipItems[0];
+                    let label = item.chart.data.labels[item.dataIndex];
+                    return Array.isArray(label) ? label.join(' ') : label;
+                }
+            }
+        };
+
+        // --- RENDERING CHARTS ---
+
+        function initCharts() {
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#94a3b8';
+
+            // 1. Radar Chart
+            const radarCtx = document.getElementById('radarChart').getContext('2d');
+            new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['WPA Cracking', 'WPS Attacks', 'Phishing/MITM', 'Interface Ops', 'SDR/RF', 'BLE', 'RFID'].map(wrapLabel),
+                    datasets: [{
+                        label: 'Current Capability',
+                        data: [5, 4, 5, 3, 1, 1, 0], // High wifi, low RF
+                        backgroundColor: 'rgba(34, 211, 238, 0.2)', // Cyan
+                        borderColor: '#22d3ee',
+                        pointBackgroundColor: '#22d3ee',
+                        pointBorderColor: '#fff'
+                    }, {
+                        label: 'Target Profile',
+                        data: [5, 5, 5, 5, 5, 5, 5],
+                        backgroundColor: 'transparent',
+                        borderColor: '#ef4444', // Red (Gap)
+                        borderDash: [5, 5],
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#334155' },
+                            grid: { color: '#334155' },
+                            pointLabels: { color: '#e2e8f0', font: {size: 11} },
+                            ticks: { display: false, backdropColor: 'transparent' },
+                            suggestedMin: 0,
+                            suggestedMax: 5
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#e2e8f0' } },
+                        tooltip: tooltipConfig
+                    }
+                }
+            });
+
+            // 2. Donut Chart
+            const donutCtx = document.getElementById('donutChart').getContext('2d');
+            new Chart(donutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tier 1: Core Offensive', 'Tier 2: Support Utils'].map(wrapLabel),
+                    datasets: [{
+                        data: [6, 4], // Based on toolsData counts
+                        backgroundColor: ['#22d3ee', '#c084fc'],
+                        borderColor: '#1e293b',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#e2e8f0' } },
+                        tooltip: tooltipConfig
+                    }
+                }
+            });
+
+            // 3. Bar Chart (Horizontal)
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['WPA/WPA2 Handshakes', 'Client Credentials', 'WPS PINs', 'Network Traffic', 'Radio Hardware'].map(wrapLabel),
+                    datasets: [{
+                        label: 'Tools Targeting Vector',
+                        data: [4, 3, 2, 2, 1],
+                        backgroundColor: ['#22d3ee', '#f472b6', '#c084fc', '#4ade80', '#94a3b8'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: '#334155' } },
+                        y: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: tooltipConfig
+                    }
+                }
+            });
+        }
+
+        // --- GRID FILTERING ---
+
+        function renderGrid(filterType) {
+            const grid = document.getElementById('toolGrid');
+            grid.innerHTML = ''; // Clear
+
+            const filtered = filterType === 'all'
+                ? toolsData
+                : toolsData.filter(t => t.tier === filterType);
+
+            filtered.forEach(tool => {
+                const isT1 = tool.tier === 'tier1';
+                const borderColor = isT1 ? 'border-cyber-cyan' : 'border-cyber-purple';
+                const badgeColor = isT1 ? 'bg-cyber-cyan text-cyber-dark' : 'bg-cyber-purple text-cyber-dark';
+                const tierLabel = isT1 ? 'TIER 1' : 'TIER 2';
+
+                const card = document.createElement('div');
+                card.className = `bg-cyber-card border-l-4 ${borderColor} p-5 rounded shadow-lg hover:bg-slate-800 transition-colors`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="text-xl font-bold text-white">${tool.name}</h3>
+                        <span class="text-xs font-bold px-2 py-1 rounded ${badgeColor}">${tierLabel}</span>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-xs text-slate-500 uppercase tracking-wide font-bold">Function</p>
+                        <p class="text-sm text-slate-300">${tool.function}</p>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-xs text-slate-500 uppercase tracking-wide font-bold">Attack Targets</p>
+                        <p class="text-sm text-slate-300">${tool.targets}</p>
+                    </div>
+                    <div class="bg-cyber-dark p-3 rounded border border-cyber-border">
+                        <p class="text-xs text-slate-500 font-mono mb-1">> Components:</p>
+                        <p class="text-xs text-cyber-cyan font-mono">${tool.components}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Button States
+            ['all', 'tier1', 'tier2'].forEach(id => {
+                const btn = document.getElementById(`btn-${id}`);
+                if (id === filterType) {
+                    btn.classList.remove('text-slate-400', 'bg-transparent');
+                    btn.classList.add('bg-cyber-cyan', 'text-cyber-dark');
+                    // Handle color swap for Tier 2 button active state if needed, simpler to keep cyan for active
+                } else {
+                    btn.classList.add('text-slate-400', 'bg-transparent');
+                    btn.classList.remove('bg-cyber-cyan', 'text-cyber-dark');
+                }
+            });
+        }
+
+        function filterGrid(type) {
+            renderGrid(type);
+        }
+
+        // --- INIT ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            renderGrid('all');
+        });
+
+    </script>
+</body>
+</html>
