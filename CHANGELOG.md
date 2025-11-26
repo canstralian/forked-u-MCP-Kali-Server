@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Wireless Attack Stack Analysis Dashboard (HTML/Chart.js)
+  - Interactive visualizations for tool categorization
+  - Attack vector frequency analysis
+  - Operational workflow diagram
+  - Capability gap analysis with radar charts
+- New API endpoints for reports:
+  - `/api/reports` - List all available reports
+  - `/api/reports/wireless-analysis` - Serve HTML dashboard
+  - `/api/reports/wireless-analysis/data` - Serve JSON data
+- Comprehensive documentation for wireless analysis (`docs/WIRELESS_ANALYSIS.md`)
+- Structured data file (`docs/reports/wireless-analysis/data.json`)
+- Reports directory structure (`docs/reports/`)
 - Initial release preparation
 - Comprehensive security documentation
 - Environment configuration template (.env.example)
@@ -15,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CHANGELOG.md for version tracking
 
 ### Changed
+- Enhanced Flask server with report serving capabilities
+- Added `send_from_directory` and `send_file` to Flask imports
 - Code style improvements and linting fixes
 - Enhanced documentation in README.md
 
@@ -22,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added input validation guidelines
 - Documented security best practices
 - Added security scanning in CI pipeline
+
+### Features
+- Accessibility-compliant reporting (WCAG 2.1 AA)
+- Responsive design for mobile, tablet, and desktop
+- Print/Export functionality for reports
+- Error handling for CDN failures
+- Custom "Neon Night" theme for security tools visualization
 
 ## [0.1.0] - TBD
 

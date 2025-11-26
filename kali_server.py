@@ -12,7 +12,7 @@ import sys
 import traceback
 import threading
 from typing import Dict, Any
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, send_file
 
 # Configure logging
 logging.basicConfig(
@@ -571,6 +571,56 @@ def get_capabilities():
 def execute_tool(tool_name):
     # Direct tool execution without going through the API server
     pass
+
+
+# Wireless Analysis Report Endpoints
+@app.route("/api/reports/wireless-analysis", methods=["GET"])
+def wireless_analysis_report():
+    """Serve the wireless attack stack analysis HTML report."""
+    try:
+        report_dir = os.path.join(os.path.dirname(__file__), "docs", "reports", "wireless-analysis")
+        return send_from_directory(report_dir, "index.html")
+    except Exception as e:
+        logger.error(f"Error serving wireless analysis report: {str(e)}")
+        return jsonify({
+            "error": f"Report not found: {str(e)}"
+        }), 404
+
+
+@app.route("/api/reports/wireless-analysis/data", methods=["GET"])
+def wireless_analysis_data():
+    """Serve the wireless attack stack analysis data in JSON format."""
+    try:
+        import json
+        data_file = os.path.join(os.path.dirname(__file__), "docs", "reports", "wireless-analysis", "data.json")
+        with open(data_file, 'r') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        logger.error(f"Error serving wireless analysis data: {str(e)}")
+        return jsonify({
+            "error": f"Data not found: {str(e)}"
+        }), 404
+
+
+@app.route("/api/reports", methods=["GET"])
+def list_reports():
+    """List all available reports."""
+    reports = [
+        {
+            "name": "Wireless Attack Stack Analysis",
+            "description": "Operational Tier & Capability Analysis for Wireless Penetration Testing Tools",
+            "path": "/api/reports/wireless-analysis",
+            "data_endpoint": "/api/reports/wireless-analysis/data",
+            "version": "1.0.0",
+            "created": "2025-11-26"
+        }
+    ]
+    return jsonify({
+        "status": "success",
+        "total_reports": len(reports),
+        "reports": reports
+    })
 
 
 def parse_args():

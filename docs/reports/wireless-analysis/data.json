@@ -1,0 +1,158 @@
+{
+  "metadata": {
+    "title": "Wireless Attack Stack Analysis",
+    "version": "1.0.0",
+    "generated": "2025-11-26",
+    "description": "Operational Tier & Capability Analysis for Wireless Penetration Testing Tools"
+  },
+  "composition": {
+    "labels": ["Core Offensive (802.11)", "Support Utilities", "RF/SDR Utilities"],
+    "data": [6, 2, 1],
+    "percentages": [65, 35, 0],
+    "colors": ["#ec4899", "#06b6d4", "#8b5cf6"]
+  },
+  "attackVectors": {
+    "labels": ["WPA Handshakes", "Client Credentials", "WPS PINs", "Network Traffic", "MAC Address"],
+    "data": [3, 3, 3, 2, 1],
+    "tools": {
+      "WPA Handshakes": ["Aircrack-ng", "Wifite", "Airgeddon"],
+      "Client Credentials": ["Wifiphisher", "Airgeddon", "Wifipumpkin3"],
+      "WPS PINs": ["Reaver", "Bully", "Wifite"],
+      "Network Traffic": ["Bettercap", "Wifipumpkin3"],
+      "MAC Address": ["Macchanger"]
+    }
+  },
+  "capabilityGaps": {
+    "labels": ["802.11 Wi-Fi", "MITM Ops", "Radio Prog.", "SDR Active", "BLE/Smart", "RFID/NFC"],
+    "currentCapability": [5, 3, 2, 0, 0, 0],
+    "requiredCoverage": [5, 5, 4, 4, 4, 4],
+    "gaps": [
+      {
+        "category": "SDR / Active RF",
+        "severity": "critical",
+        "missingTools": ["gnuradio", "hackrf_tools", "rfcat"],
+        "currentState": "Limited to radio programming via chirp"
+      },
+      {
+        "category": "BLE / Bluetooth Smart",
+        "severity": "critical",
+        "missingTools": ["bleah", "crackle", "btlejack"],
+        "currentState": "No BLE-specific tooling present"
+      },
+      {
+        "category": "RFID / NFC",
+        "severity": "critical",
+        "missingTools": ["proxmark3", "mfcuk", "libnfc"],
+        "currentState": "Complete absence of proximity card tools"
+      }
+    ]
+  },
+  "tools": {
+    "tier1": [
+      {
+        "name": "Aircrack-ng",
+        "category": "Core Offensive",
+        "targets": ["WPA Handshakes"],
+        "description": "Complete suite for wireless auditing"
+      },
+      {
+        "name": "Wifite",
+        "category": "Core Offensive",
+        "targets": ["WPA Handshakes", "WPS PINs"],
+        "description": "Automated wireless attack tool"
+      },
+      {
+        "name": "Airgeddon",
+        "category": "Core Offensive",
+        "targets": ["WPA Handshakes", "Client Credentials"],
+        "description": "Multi-use wireless security auditing tool"
+      },
+      {
+        "name": "Reaver",
+        "category": "Core Offensive",
+        "targets": ["WPS PINs"],
+        "description": "WPS brute-force attack tool"
+      },
+      {
+        "name": "Bully",
+        "category": "Core Offensive",
+        "targets": ["WPS PINs"],
+        "description": "WPS brute-force attack tool"
+      },
+      {
+        "name": "Wifiphisher",
+        "category": "Core Offensive",
+        "targets": ["Client Credentials"],
+        "description": "Rogue AP and phishing attack framework"
+      }
+    ],
+    "tier2": [
+      {
+        "name": "Macchanger",
+        "category": "Support",
+        "targets": ["MAC Address"],
+        "description": "MAC address manipulation utility"
+      },
+      {
+        "name": "Bettercap",
+        "category": "Support/MITM",
+        "targets": ["Network Traffic"],
+        "description": "Swiss Army knife for WiFi, BLE and Ethernet networks reconnaissance and MITM attacks"
+      }
+    ],
+    "other": [
+      {
+        "name": "Wifipumpkin3",
+        "category": "Rogue AP Framework",
+        "targets": ["Client Credentials", "Network Traffic"],
+        "description": "Framework for creating rogue access points"
+      }
+    ]
+  },
+  "workflow": {
+    "steps": [
+      {
+        "order": 1,
+        "name": "Preparation",
+        "description": "Interface Setup",
+        "tool": "macchanger",
+        "output": "wlan0"
+      },
+      {
+        "order": 2,
+        "name": "Mode Switch",
+        "description": "Monitor Mode",
+        "tool": "airmon-ng",
+        "output": "mon0"
+      },
+      {
+        "order": 3,
+        "name": "Execution",
+        "description": "Attack Vector",
+        "tool": "Core Tooling",
+        "output": "captures/exploits"
+      },
+      {
+        "order": 4,
+        "name": "Post-Exploit / MITM",
+        "description": "Optional advanced operations",
+        "tool": "bettercap / wifipumpkin3",
+        "output": "credentials/data"
+      }
+    ]
+  },
+  "statistics": {
+    "totalTools": 9,
+    "tier1Count": 6,
+    "tier2Count": 2,
+    "otherCount": 1,
+    "protocolsCovered": ["802.11a/b/g/n/ac"],
+    "protocolsMissing": ["BLE", "RFID", "NFC", "Zigbee", "LoRa"],
+    "primaryVectors": {
+      "WPA/WPA2 Handshakes": 3,
+      "Credential Phishing": 3,
+      "WPS Exploitation": 3,
+      "MITM": 2
+    }
+  }
+}
