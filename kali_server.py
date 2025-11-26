@@ -563,14 +563,174 @@ def health_check():
 
 @app.route("/mcp/capabilities", methods=["GET"])
 def get_capabilities():
-    # Return tool capabilities similar to our existing MCP server
-    pass
+    """Return available tools and their capabilities."""
+    capabilities = {
+        "tools": {
+            "nmap": {
+                "name": "nmap",
+                "description": "Execute Nmap network scanning",
+                "parameters": {
+                    "target": {"type": "string", "required": True, "description": "IP address or hostname to scan"},
+                    "scan_type": {"type": "string", "required": False, "default": "-sCV", "description": "Scan type (e.g., -sV, -sS, -sCV)"},
+                    "ports": {"type": "string", "required": False, "description": "Comma-separated list of ports or port ranges"},
+                    "additional_args": {"type": "string", "required": False, "default": "-T4 -Pn", "description": "Additional Nmap arguments"}
+                }
+            },
+            "gobuster": {
+                "name": "gobuster",
+                "description": "Execute Gobuster directory/DNS enumeration",
+                "parameters": {
+                    "url": {"type": "string", "required": True, "description": "Target URL"},
+                    "mode": {"type": "string", "required": False, "default": "dir", "description": "Mode: dir, dns, fuzz, vhost"},
+                    "wordlist": {"type": "string", "required": False, "default": "/usr/share/wordlists/dirb/common.txt", "description": "Path to wordlist"},
+                    "additional_args": {"type": "string", "required": False, "description": "Additional Gobuster arguments"}
+                }
+            },
+            "dirb": {
+                "name": "dirb",
+                "description": "Execute Dirb web content scanner",
+                "parameters": {
+                    "url": {"type": "string", "required": True, "description": "Target URL"},
+                    "wordlist": {"type": "string", "required": False, "default": "/usr/share/wordlists/dirb/common.txt", "description": "Path to wordlist"},
+                    "additional_args": {"type": "string", "required": False, "description": "Additional Dirb arguments"}
+                }
+            },
+            "nikto": {
+                "name": "nikto",
+                "description": "Execute Nikto web server scanner",
+                "parameters": {
+                    "target": {"type": "string", "required": True, "description": "Target URL or IP"},
+                    "additional_args": {"type": "string", "required": False, "description": "Additional Nikto arguments"}
+                }
+            },
+            "sqlmap": {
+                "name": "sqlmap",
+                "description": "Execute SQLmap SQL injection scanner",
+                "parameters": {
+                    "url": {"type": "string", "required": True, "description": "Target URL"},
+                    "data": {"type": "string", "required": False, "description": "POST data string"},
+                    "additional_args": {"type": "string", "required": False, "description": "Additional SQLmap arguments"}
+                }
+            },
+            "metasploit": {
+                "name": "metasploit",
+                "description": "Execute Metasploit module",
+                "parameters": {
+                    "module": {"type": "string", "required": True, "description": "Metasploit module path"},
+                    "options": {"type": "object", "required": False, "default": {}, "description": "Module options as key-value pairs"}
+                }
+            },
+            "hydra": {
+                "name": "hydra",
+                "description": "Execute Hydra password cracking",
+                "parameters": {
+                    "target": {"type": "string", "required": True, "description": "Target IP or hostname"},
+                    "service": {"type": "string", "required": True, "description": "Service to attack (ssh, ftp, etc.)"},
+                    "username": {"type": "string", "required": False, "description": "Single username to try"},
+                    "username_file": {"type": "string", "required": False, "description": "Path to username file"},
+                    "password": {"type": "string", "required": False, "description": "Single password to try"},
+                    "password_file": {"type": "string", "required": False, "description": "Path to password file"},
+                    "additional_args": {"type": "string", "required": False, "description": "Additional Hydra arguments"}
+                }
+            },
+            "john": {
+                "name": "john",
+                "description": "Execute John the Ripper password cracker",
+                "parameters": {
+                    "hash_file": {"type": "string", "required": True, "description": "Path to file containing hashes"},
+                    "wordlist": {"type": "string", "required": False, "default": "/usr/share/wordlists/rockyou.txt", "description": "Path to wordlist"},
+                    "format": {"type": "string", "required": False, "description": "Hash format type"},
+                    "additional_args": {"type": "string", "required": False, "description": "Additional John arguments"}
+                }
+            },
+            "wpscan": {
+                "name": "wpscan",
+                "description": "Execute WPScan WordPress vulnerability scanner",
+                "parameters": {
+                    "url": {"type": "string", "required": True, "description": "Target WordPress URL"},
+                    "additional_args": {"type": "string", "required": False, "description": "Additional WPScan arguments"}
+                }
+            },
+            "enum4linux": {
+                "name": "enum4linux",
+                "description": "Execute Enum4linux Windows/Samba enumeration",
+                "parameters": {
+                    "target": {"type": "string", "required": True, "description": "Target IP or hostname"},
+                    "additional_args": {"type": "string", "required": False, "default": "-a", "description": "Additional enum4linux arguments"}
+                }
+            }
+        },
+        "command_allowlist": list(COMMAND_ALLOWLIST.keys()),
+        "version": "1.0.0",
+        "server": "Kali Linux Tools API Server"
+    }
+    return jsonify(capabilities)
 
 
 @app.route("/mcp/tools/kali_tools/<tool_name>", methods=["POST"])
 def execute_tool(tool_name):
-    # Direct tool execution without going through the API server
-    pass
+    """Execute a tool directly by name with provided parameters."""
+    try:
+        params = request.json or {}
+
+        # Map tool names to their corresponding endpoint handlers
+        tool_handlers = {
+            "nmap": ("api/tools/nmap", ["target"]),
+            "gobuster": ("api/tools/gobuster", ["url"]),
+            "dirb": ("api/tools/dirb", ["url"]),
+            "nikto": ("api/tools/nikto", ["target"]),
+            "sqlmap": ("api/tools/sqlmap", ["url"]),
+            "metasploit": ("api/tools/metasploit", ["module"]),
+            "hydra": ("api/tools/hydra", ["target", "service"]),
+            "john": ("api/tools/john", ["hash_file"]),
+            "wpscan": ("api/tools/wpscan", ["url"]),
+            "enum4linux": ("api/tools/enum4linux", ["target"])
+        }
+
+        if tool_name not in tool_handlers:
+            logger.warning(f"Unknown tool requested: {tool_name}")
+            return jsonify({
+                "error": f"Unknown tool: {tool_name}. Available tools: {', '.join(tool_handlers.keys())}"
+            }), 400
+
+        endpoint, required_params = tool_handlers[tool_name]
+
+        # Validate required parameters
+        missing_params = [param for param in required_params if param not in params or not params[param]]
+        if missing_params:
+            logger.warning(f"Missing required parameters for {tool_name}: {missing_params}")
+            return jsonify({
+                "error": f"Missing required parameters: {', '.join(missing_params)}"
+            }), 400
+
+        # Route to the appropriate tool handler
+        if tool_name == "nmap":
+            return nmap()
+        elif tool_name == "gobuster":
+            return gobuster()
+        elif tool_name == "dirb":
+            return dirb()
+        elif tool_name == "nikto":
+            return nikto()
+        elif tool_name == "sqlmap":
+            return sqlmap()
+        elif tool_name == "metasploit":
+            return metasploit()
+        elif tool_name == "hydra":
+            return hydra()
+        elif tool_name == "john":
+            return john()
+        elif tool_name == "wpscan":
+            return wpscan()
+        elif tool_name == "enum4linux":
+            return enum4linux()
+
+    except Exception as e:
+        logger.error(f"Error executing tool {tool_name}: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            "error": f"Server error: {str(e)}"
+        }), 500
 
 
 def parse_args():
