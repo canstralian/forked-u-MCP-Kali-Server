@@ -33,8 +33,8 @@ You must have admin access to the repository to configure branch protection rule
    - ✅ Enable "Require status checks to pass before merging"
    - ✅ Enable "Require branches to be up to date before merging"
    - Select the following required status checks:
-     - `build` (from CI Pipeline workflow)
-     - `Analyze` (from CodeQL Security Scan workflow)
+     - `Lint and Test` (from CI Pipeline workflow - job: lint-and-test)
+     - `Analyze` (from CodeQL Security Scan workflow - job: codeql)
 
    #### Recommended Additional Settings
    - ✅ Enable "Require a pull request before merging"
@@ -53,12 +53,12 @@ You must have admin access to the repository to configure branch protection rule
 The following GitHub Actions workflows provide status checks:
 
 ### CI Pipeline (`ci.yml`)
-- **Job Name**: `build`
+- **Job Name**: `Lint and Test` (job id: `lint-and-test`)
 - **Checks**: Python linting (Pylint, Flake8), pytest tests, Docker build
 - **Triggers**: Push to main, Pull requests to main
 
 ### CodeQL Security Scan (`codeql.yml`)
-- **Job Name**: `Analyze`
+- **Job Name**: `Analyze` (job id: `codeql`)
 - **Checks**: Security vulnerability scanning
 - **Triggers**: Push to main, Pull requests to main, Weekly schedule
 

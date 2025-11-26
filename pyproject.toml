@@ -1,0 +1,114 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-kali-server"
+version = "0.1.0"
+description = "MCP (Model Context Protocol) Server for Kali Linux security tools integration"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+keywords = ["security", "penetration-testing", "kali-linux", "mcp", "ai-assistant"]
+authors = [
+    {name = "Yousof Nahya", email = ""},
+]
+maintainers = [
+    {name = "Yousof Nahya", email = ""},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "Flask>=2.3.2",
+    "gunicorn>=20.1.0",
+    "psycopg2-binary>=2.9.6",
+    "requests>=2.31.0",
+    "mcp>=0.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pylint>=2.17.0",
+    "flake8>=6.0.0",
+    "bandit>=1.7.5",
+    "safety>=2.3.0",
+    "pip-audit>=2.6.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/canstralian/forked-u-MCP-Kali-Server"
+Documentation = "https://github.com/canstralian/forked-u-MCP-Kali-Server#readme"
+Repository = "https://github.com/canstralian/forked-u-MCP-Kali-Server"
+Issues = "https://github.com/canstralian/forked-u-MCP-Kali-Server/issues"
+Changelog = "https://github.com/canstralian/forked-u-MCP-Kali-Server/blob/main/CHANGELOG.md"
+
+[project.scripts]
+mcp-kali-server = "kali_server:main"
+mcp-client = "mcp_server:main"
+
+[tool.setuptools]
+py-modules = ["kali_server", "mcp_server"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = [
+    ".",
+]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.pylint.messages_control]
+max-line-length = 120
+disable = [
+    "C0111",  # missing-docstring
+    "C0103",  # invalid-name
+    "R0913",  # too-many-arguments
+]
+
+[tool.bandit]
+exclude_dirs = ["/test", "/tests"]
+skips = ["B404", "B603"]  # Consider security implications, but allow subprocess
