@@ -113,7 +113,7 @@ class CommandExecutor:
                 self.return_code = -1
 
             # Always consider it a success if we have output, even with timeout
-            success = True if self.timed_out and (self.stdout_data or self.stderr_data) else (self.return_code == 0)
+            success = True if self.timed_out and bool(self.stdout_data or self.stderr_data) else (self.return_code == 0)
 
             return {
                 "stdout": self.stdout_data,
@@ -121,7 +121,7 @@ class CommandExecutor:
                 "return_code": self.return_code,
                 "success": success,
                 "timed_out": self.timed_out,
-                "partial_results": self.timed_out and (self.stdout_data or self.stderr_data)
+                "partial_results": self.timed_out and bool(self.stdout_data or self.stderr_data)
             }
 
         except Exception as e:
