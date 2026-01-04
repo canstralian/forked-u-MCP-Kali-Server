@@ -387,7 +387,7 @@ def health_check():
 
     for tool in essential_tools:
         try:
-            result = execute_command(f"which {tool}")
+            result = execute_command(["which", tool])
             tools_status[tool] = result["success"]
         except Exception:
             tools_status[tool] = False
@@ -556,15 +556,17 @@ def handle_sqlmap(params: Dict[str, Any]) -> Dict[str, Any]:
     if not url:
         return {"error": "URL parameter is required", "success": False}
 
-    command = f"sqlmap -u {url} --batch"
+    # Build command as a list for security
+    command = ["sqlmap", "-u", url, "--batch"]
 
     if data:
-        command += f" --data=\"{data}\""
+        command.extend(["--data", data])
 
     if additional_args:
-        command += f" {additional_args}"
+        # Parse additional args safely
+        command.extend(shlex.split(additional_args))
 
-    return execute_command(shlex.split(command))
+    return execute_command(command)
 
 
 def handle_metasploit(params: Dict[str, Any]) -> Dict[str, Any]:
