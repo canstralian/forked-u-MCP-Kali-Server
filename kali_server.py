@@ -7,8 +7,10 @@
 import argparse
 import logging
 import os
+import shlex
 import subprocess
 import sys
+import tempfile
 import traceback
 import threading
 from typing import Dict, Any
@@ -441,7 +443,7 @@ def handle_nmap(params: Dict[str, Any]) -> Dict[str, Any]:
 
     command += f" {target}"
 
-    return execute_command(command)
+    return execute_command(shlex.split(command))
 
 
 def handle_gobuster(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -477,7 +479,7 @@ def handle_gobuster(params: Dict[str, Any]) -> Dict[str, Any]:
     if additional_args:
         command += f" {additional_args}"
 
-    return execute_command(command)
+    return execute_command(shlex.split(command))
 
 
 def handle_dirb(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -505,7 +507,7 @@ def handle_dirb(params: Dict[str, Any]) -> Dict[str, Any]:
     if additional_args:
         command += f" {additional_args}"
 
-    return execute_command(command)
+    return execute_command(shlex.split(command))
 
 
 def handle_nikto(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -531,7 +533,7 @@ def handle_nikto(params: Dict[str, Any]) -> Dict[str, Any]:
     if additional_args:
         command += f" {additional_args}"
 
-    return execute_command(command)
+    return execute_command(shlex.split(command))
 
 
 def handle_sqlmap(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -562,7 +564,7 @@ def handle_sqlmap(params: Dict[str, Any]) -> Dict[str, Any]:
     if additional_args:
         command += f" {additional_args}"
 
-    return execute_command(command)
+    return execute_command(shlex.split(command))
 
 
 def handle_metasploit(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -589,14 +591,14 @@ def handle_metasploit(params: Dict[str, Any]) -> Dict[str, Any]:
         resource_content += f"set {key} {value}\n"
     resource_content += "exploit\n"
 
-    # Save resource script to a temporary file
-    resource_file = "/tmp/mcp_msf_resource.rc"
+    # Save resource script to a temporary file using secure tempfile
     try:
-        with open(resource_file, "w") as f:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.rc', delete=False) as f:
+            resource_file = f.name
             f.write(resource_content)
 
         command = f"msfconsole -q -r {resource_file}"
-        result = execute_command(command)
+        result = execute_command(shlex.split(command))
 
         # Clean up the temporary file
         try:
@@ -660,7 +662,7 @@ def handle_hydra(params: Dict[str, Any]) -> Dict[str, Any]:
 
     command += f" {target} {service}"
 
-    return execute_command(command)
+    return execute_command(shlex.split(command))
 
 
 def handle_john(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -698,7 +700,7 @@ def handle_john(params: Dict[str, Any]) -> Dict[str, Any]:
 
     command += f" {hash_file}"
 
-    return execute_command(command)
+    return execute_command(shlex.split(command))
 
 
 def handle_wpscan(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -724,7 +726,7 @@ def handle_wpscan(params: Dict[str, Any]) -> Dict[str, Any]:
     if additional_args:
         command += f" {additional_args}"
 
-    return execute_command(command)
+    return execute_command(shlex.split(command))
 
 
 def handle_enum4linux(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -747,7 +749,7 @@ def handle_enum4linux(params: Dict[str, Any]) -> Dict[str, Any]:
 
     command = f"enum4linux {additional_args} {target}"
 
-    return execute_command(command)
+    return execute_command(shlex.split(command))
 
 
 # ============================================================================
