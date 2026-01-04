@@ -7,8 +7,10 @@
 import argparse
 import logging
 import os
+import shlex
 import subprocess
 import sys
+import tempfile
 import traceback
 import threading
 from typing import Dict, Any
@@ -140,10 +142,10 @@ class CommandExecutor:
 def execute_command(command: list) -> Dict[str, Any]:
     """
     Execute a command and return the result
-    
+
     Args:
         command: The command to execute, as a list of strings
-        
+
     Returns:
         A dictionary containing the stdout, stderr, and return code
     """
@@ -179,30 +181,13 @@ def generic_command():
 def nmap():
     """Execute nmap scan with the provided parameters."""
     try:
-        params = request.json
-        target = params.get("target", "")
-        scan_type = params.get("scan_type", "-sCV")
-        ports = params.get("ports", "")
-        additional_args = params.get("additional_args", "-T4 -Pn")
+        params = request.json if request.json else {}
+        result = handle_nmap(params)
 
-        if not target:
-            logger.warning("Nmap called without target parameter")
-            return jsonify({
-                "error": "Target parameter is required"
-            }), 400
+        # Return 400 if there's a validation error
+        if not result.get("success", True) and "error" in result:
+            return jsonify(result), 400
 
-        command = f"nmap {scan_type}"
-
-        if ports:
-            command += f" -p {ports}"
-
-        if additional_args:
-            # Basic validation for additional args - more sophisticated validation would be better
-            command += f" {additional_args}"
-
-        command += f" {target}"
-
-        result = execute_command(command)
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error in nmap endpoint: {str(e)}")
@@ -216,31 +201,13 @@ def nmap():
 def gobuster():
     """Execute gobuster with the provided parameters."""
     try:
-        params = request.json
-        url = params.get("url", "")
-        mode = params.get("mode", "dir")
-        wordlist = params.get("wordlist", "/usr/share/wordlists/dirb/common.txt")
-        additional_args = params.get("additional_args", "")
+        params = request.json if request.json else {}
+        result = handle_gobuster(params)
 
-        if not url:
-            logger.warning("Gobuster called without URL parameter")
-            return jsonify({
-                "error": "URL parameter is required"
-            }), 400
+        # Return 400 if there's a validation error
+        if not result.get("success", True) and "error" in result:
+            return jsonify(result), 400
 
-        # Validate mode
-        if mode not in ["dir", "dns", "fuzz", "vhost"]:
-            logger.warning(f"Invalid gobuster mode: {mode}")
-            return jsonify({
-                "error": f"Invalid mode: {mode}. Must be one of: dir, dns, fuzz, vhost"
-            }), 400
-
-        command = f"gobuster {mode} -u {url} -w {wordlist}"
-
-        if additional_args:
-            command += f" {additional_args}"
-
-        result = execute_command(command)
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error in gobuster endpoint: {str(e)}")
@@ -254,23 +221,13 @@ def gobuster():
 def dirb():
     """Execute dirb with the provided parameters."""
     try:
-        params = request.json
-        url = params.get("url", "")
-        wordlist = params.get("wordlist", "/usr/share/wordlists/dirb/common.txt")
-        additional_args = params.get("additional_args", "")
+        params = request.json if request.json else {}
+        result = handle_dirb(params)
 
-        if not url:
-            logger.warning("Dirb called without URL parameter")
-            return jsonify({
-                "error": "URL parameter is required"
-            }), 400
+        # Return 400 if there's a validation error
+        if not result.get("success", True) and "error" in result:
+            return jsonify(result), 400
 
-        command = f"dirb {url} {wordlist}"
-
-        if additional_args:
-            command += f" {additional_args}"
-
-        result = execute_command(command)
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error in dirb endpoint: {str(e)}")
@@ -284,22 +241,13 @@ def dirb():
 def nikto():
     """Execute nikto with the provided parameters."""
     try:
-        params = request.json
-        target = params.get("target", "")
-        additional_args = params.get("additional_args", "")
+        params = request.json if request.json else {}
+        result = handle_nikto(params)
 
-        if not target:
-            logger.warning("Nikto called without target parameter")
-            return jsonify({
-                "error": "Target parameter is required"
-            }), 400
+        # Return 400 if there's a validation error
+        if not result.get("success", True) and "error" in result:
+            return jsonify(result), 400
 
-        command = f"nikto -h {target}"
-
-        if additional_args:
-            command += f" {additional_args}"
-
-        result = execute_command(command)
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error in nikto endpoint: {str(e)}")
@@ -313,26 +261,13 @@ def nikto():
 def sqlmap():
     """Execute sqlmap with the provided parameters."""
     try:
-        params = request.json
-        url = params.get("url", "")
-        data = params.get("data", "")
-        additional_args = params.get("additional_args", "")
+        params = request.json if request.json else {}
+        result = handle_sqlmap(params)
 
-        if not url:
-            logger.warning("SQLMap called without URL parameter")
-            return jsonify({
-                "error": "URL parameter is required"
-            }), 400
+        # Return 400 if there's a validation error
+        if not result.get("success", True) and "error" in result:
+            return jsonify(result), 400
 
-        command = f"sqlmap -u {url} --batch"
-
-        if data:
-            command += f" --data=\"{data}\""
-
-        if additional_args:
-            command += f" {additional_args}"
-
-        result = execute_command(command)
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error in sqlmap endpoint: {str(e)}")
@@ -346,40 +281,12 @@ def sqlmap():
 def metasploit():
     """Execute metasploit module with the provided parameters."""
     try:
-        params = request.json
-        module = params.get("module", "")
-        options = params.get("options", {})
+        params = request.json if request.json else {}
+        result = handle_metasploit(params)
 
-        if not module:
-            logger.warning("Metasploit called without module parameter")
-            return jsonify({
-                "error": "Module parameter is required"
-            }), 400
-
-        # Format options for Metasploit
-        options_str = ""
-        for key, value in options.items():
-            options_str += f" {key}={value}"
-
-        # Create an MSF resource script
-        resource_content = f"use {module}\n"
-        for key, value in options.items():
-            resource_content += f"set {key} {value}\n"
-        resource_content += "exploit\n"
-
-        # Save resource script to a temporary file
-        resource_file = "/tmp/mcp_msf_resource.rc"
-        with open(resource_file, "w") as f:
-            f.write(resource_content)
-
-        command = f"msfconsole -q -r {resource_file}"
-        result = execute_command(command)
-
-        # Clean up the temporary file
-        try:
-            os.remove(resource_file)
-        except Exception as e:
-            logger.warning(f"Error removing temporary resource file: {str(e)}")
+        # Return 400 if there's a validation error
+        if not result.get("success", True) and "error" in result:
+            return jsonify(result), 400
 
         return jsonify(result)
     except Exception as e:
@@ -394,45 +301,13 @@ def metasploit():
 def hydra():
     """Execute hydra with the provided parameters."""
     try:
-        params = request.json
-        target = params.get("target", "")
-        service = params.get("service", "")
-        username = params.get("username", "")
-        username_file = params.get("username_file", "")
-        password = params.get("password", "")
-        password_file = params.get("password_file", "")
-        additional_args = params.get("additional_args", "")
+        params = request.json if request.json else {}
+        result = handle_hydra(params)
 
-        if not target or not service:
-            logger.warning("Hydra called without target or service parameter")
-            return jsonify({
-                "error": "Target and service parameters are required"
-            }), 400
+        # Return 400 if there's a validation error
+        if not result.get("success", True) and "error" in result:
+            return jsonify(result), 400
 
-        if not (username or username_file) or not (password or password_file):
-            logger.warning("Hydra called without username/password parameters")
-            return jsonify({
-                "error": "Username/username_file and password/password_file are required"
-            }), 400
-
-        command = f"hydra -t 4"
-
-        if username:
-            command += f" -l {username}"
-        elif username_file:
-            command += f" -L {username_file}"
-
-        if password:
-            command += f" -p {password}"
-        elif password_file:
-            command += f" -P {password_file}"
-
-        if additional_args:
-            command += f" {additional_args}"
-
-        command += f" {target} {service}"
-
-        result = execute_command(command)
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error in hydra endpoint: {str(e)}")
@@ -446,32 +321,13 @@ def hydra():
 def john():
     """Execute john with the provided parameters."""
     try:
-        params = request.json
-        hash_file = params.get("hash_file", "")
-        wordlist = params.get("wordlist", "/usr/share/wordlists/rockyou.txt")
-        format_type = params.get("format", "")
-        additional_args = params.get("additional_args", "")
+        params = request.json if request.json else {}
+        result = handle_john(params)
 
-        if not hash_file:
-            logger.warning("John called without hash_file parameter")
-            return jsonify({
-                "error": "Hash file parameter is required"
-            }), 400
+        # Return 400 if there's a validation error
+        if not result.get("success", True) and "error" in result:
+            return jsonify(result), 400
 
-        command = f"john"
-
-        if format_type:
-            command += f" --format={format_type}"
-
-        if wordlist:
-            command += f" --wordlist={wordlist}"
-
-        if additional_args:
-            command += f" {additional_args}"
-
-        command += f" {hash_file}"
-
-        result = execute_command(command)
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error in john endpoint: {str(e)}")
@@ -485,22 +341,13 @@ def john():
 def wpscan():
     """Execute wpscan with the provided parameters."""
     try:
-        params = request.json
-        url = params.get("url", "")
-        additional_args = params.get("additional_args", "")
+        params = request.json if request.json else {}
+        result = handle_wpscan(params)
 
-        if not url:
-            logger.warning("WPScan called without URL parameter")
-            return jsonify({
-                "error": "URL parameter is required"
-            }), 400
+        # Return 400 if there's a validation error
+        if not result.get("success", True) and "error" in result:
+            return jsonify(result), 400
 
-        command = f"wpscan --url {url}"
-
-        if additional_args:
-            command += f" {additional_args}"
-
-        result = execute_command(command)
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error in wpscan endpoint: {str(e)}")
@@ -514,19 +361,13 @@ def wpscan():
 def enum4linux():
     """Execute enum4linux with the provided parameters."""
     try:
-        params = request.json
-        target = params.get("target", "")
-        additional_args = params.get("additional_args", "-a")
+        params = request.json if request.json else {}
+        result = handle_enum4linux(params)
 
-        if not target:
-            logger.warning("Enum4linux called without target parameter")
-            return jsonify({
-                "error": "Target parameter is required"
-            }), 400
+        # Return 400 if there's a validation error
+        if not result.get("success", True) and "error" in result:
+            return jsonify(result), 400
 
-        command = f"enum4linux {additional_args} {target}"
-
-        result = execute_command(command)
         return jsonify(result)
     except Exception as e:
         logger.error(f"Error in enum4linux endpoint: {str(e)}")
@@ -546,9 +387,9 @@ def health_check():
 
     for tool in essential_tools:
         try:
-            result = execute_command(f"which {tool}")
+            result = execute_command(["which", tool])
             tools_status[tool] = result["success"]
-        except:
+        except Exception:
             tools_status[tool] = False
 
     all_essential_tools_available = all(tools_status.values())
@@ -561,16 +402,455 @@ def health_check():
     })
 
 
+# ============================================================================
+# Tool Handler Functions
+# ============================================================================
+# These functions contain the core logic for each tool, extracted from the
+# Flask endpoint handlers. They accept parameters as a dictionary and return
+# results as a dictionary, making them reusable and testable.
+# ============================================================================
+
+
+def handle_nmap(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle nmap scan execution.
+
+    Args:
+        params: Dictionary containing scan parameters:
+            - target (required): IP address or hostname to scan
+            - scan_type (optional): Scan type (default: "-sCV")
+            - ports (optional): Comma-separated list of ports or port ranges
+            - additional_args (optional): Additional nmap arguments (default: "-T4 -Pn")
+
+    Returns:
+        Dictionary containing scan results or error information
+    """
+    target = params.get("target", "")
+    scan_type = params.get("scan_type", "-sCV")
+    ports = params.get("ports", "")
+    additional_args = params.get("additional_args", "-T4 -Pn")
+
+    if not target:
+        return {"error": "Target parameter is required", "success": False}
+
+    command = f"nmap {scan_type}"
+
+    if ports:
+        command += f" -p {ports}"
+
+    if additional_args:
+        command += f" {additional_args}"
+
+    command += f" {target}"
+
+    return execute_command(shlex.split(command))
+
+
+def handle_gobuster(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle gobuster execution for directory/DNS enumeration.
+
+    Args:
+        params: Dictionary containing scan parameters:
+            - url (required): Target URL
+            - mode (optional): Scan mode - dir, dns, fuzz, vhost (default: "dir")
+            - wordlist (optional): Path to wordlist file
+            - additional_args (optional): Additional gobuster arguments
+
+    Returns:
+        Dictionary containing scan results or error information
+    """
+    url = params.get("url", "")
+    mode = params.get("mode", "dir")
+    wordlist = params.get("wordlist", "/usr/share/wordlists/dirb/common.txt")
+    additional_args = params.get("additional_args", "")
+
+    if not url:
+        return {"error": "URL parameter is required", "success": False}
+
+    if mode not in ["dir", "dns", "fuzz", "vhost"]:
+        return {
+            "error": f"Invalid mode: {mode}. Must be one of: dir, dns, fuzz, vhost",
+            "success": False
+        }
+
+    command = f"gobuster {mode} -u {url} -w {wordlist}"
+
+    if additional_args:
+        command += f" {additional_args}"
+
+    return execute_command(shlex.split(command))
+
+
+def handle_dirb(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle dirb web content scanner execution.
+
+    Args:
+        params: Dictionary containing scan parameters:
+            - url (required): Target URL
+            - wordlist (optional): Path to wordlist file
+            - additional_args (optional): Additional dirb arguments
+
+    Returns:
+        Dictionary containing scan results or error information
+    """
+    url = params.get("url", "")
+    wordlist = params.get("wordlist", "/usr/share/wordlists/dirb/common.txt")
+    additional_args = params.get("additional_args", "")
+
+    if not url:
+        return {"error": "URL parameter is required", "success": False}
+
+    command = f"dirb {url} {wordlist}"
+
+    if additional_args:
+        command += f" {additional_args}"
+
+    return execute_command(shlex.split(command))
+
+
+def handle_nikto(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle nikto web server scanner execution.
+
+    Args:
+        params: Dictionary containing scan parameters:
+            - target (required): Target URL or IP address
+            - additional_args (optional): Additional nikto arguments
+
+    Returns:
+        Dictionary containing scan results or error information
+    """
+    target = params.get("target", "")
+    additional_args = params.get("additional_args", "")
+
+    if not target:
+        return {"error": "Target parameter is required", "success": False}
+
+    command = f"nikto -h {target}"
+
+    if additional_args:
+        command += f" {additional_args}"
+
+    return execute_command(shlex.split(command))
+
+
+def handle_sqlmap(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle sqlmap SQL injection scanner execution.
+
+    Args:
+        params: Dictionary containing scan parameters:
+            - url (required): Target URL
+            - data (optional): POST data string
+            - additional_args (optional): Additional sqlmap arguments
+
+    Returns:
+        Dictionary containing scan results or error information
+    """
+    url = params.get("url", "")
+    data = params.get("data", "")
+    additional_args = params.get("additional_args", "")
+
+    if not url:
+        return {"error": "URL parameter is required", "success": False}
+
+    # Build command as a list for security
+    command = ["sqlmap", "-u", url, "--batch"]
+
+    if data:
+        command.extend(["--data", data])
+
+    if additional_args:
+        # Parse additional args safely
+        command.extend(shlex.split(additional_args))
+
+    return execute_command(command)
+
+
+def handle_metasploit(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle metasploit module execution.
+
+    Args:
+        params: Dictionary containing module parameters:
+            - module (required): Metasploit module path
+            - options (optional): Dictionary of module options
+
+    Returns:
+        Dictionary containing module execution results or error information
+    """
+    module = params.get("module", "")
+    options = params.get("options", {})
+
+    if not module:
+        return {"error": "Module parameter is required", "success": False}
+
+    # Create an MSF resource script
+    resource_content = f"use {module}\n"
+    for key, value in options.items():
+        resource_content += f"set {key} {value}\n"
+    resource_content += "exploit\n"
+
+    # Save resource script to a temporary file using secure tempfile
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.rc', delete=False) as f:
+            resource_file = f.name
+            f.write(resource_content)
+
+        command = f"msfconsole -q -r {resource_file}"
+        result = execute_command(shlex.split(command))
+
+        # Clean up the temporary file
+        try:
+            os.remove(resource_file)
+        except Exception as e:
+            logger.warning(f"Error removing temporary resource file: {str(e)}")
+
+        return result
+    except Exception as e:
+        return {"error": f"Error creating resource file: {str(e)}", "success": False}
+
+
+def handle_hydra(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle hydra password cracking tool execution.
+
+    Args:
+        params: Dictionary containing attack parameters:
+            - target (required): Target IP or hostname
+            - service (required): Service to attack (ssh, ftp, http-post-form, etc.)
+            - username (optional): Single username to try
+            - username_file (optional): Path to username file
+            - password (optional): Single password to try
+            - password_file (optional): Path to password file
+            - additional_args (optional): Additional hydra arguments
+
+    Returns:
+        Dictionary containing attack results or error information
+    """
+    target = params.get("target", "")
+    service = params.get("service", "")
+    username = params.get("username", "")
+    username_file = params.get("username_file", "")
+    password = params.get("password", "")
+    password_file = params.get("password_file", "")
+    additional_args = params.get("additional_args", "")
+
+    if not target or not service:
+        return {"error": "Target and service parameters are required", "success": False}
+
+    if not (username or username_file) or not (password or password_file):
+        return {
+            "error": "Username/username_file and password/password_file are required",
+            "success": False
+        }
+
+    command = "hydra -t 4"
+
+    if username:
+        command += f" -l {username}"
+    elif username_file:
+        command += f" -L {username_file}"
+
+    if password:
+        command += f" -p {password}"
+    elif password_file:
+        command += f" -P {password_file}"
+
+    if additional_args:
+        command += f" {additional_args}"
+
+    command += f" {target} {service}"
+
+    return execute_command(shlex.split(command))
+
+
+def handle_john(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle john the ripper password cracker execution.
+
+    Args:
+        params: Dictionary containing cracking parameters:
+            - hash_file (required): Path to file containing hashes
+            - wordlist (optional): Path to wordlist file
+            - format (optional): Hash format type
+            - additional_args (optional): Additional john arguments
+
+    Returns:
+        Dictionary containing cracking results or error information
+    """
+    hash_file = params.get("hash_file", "")
+    wordlist = params.get("wordlist", "/usr/share/wordlists/rockyou.txt")
+    format_type = params.get("format", "")
+    additional_args = params.get("additional_args", "")
+
+    if not hash_file:
+        return {"error": "Hash file parameter is required", "success": False}
+
+    command = "john"
+
+    if format_type:
+        command += f" --format={format_type}"
+
+    if wordlist:
+        command += f" --wordlist={wordlist}"
+
+    if additional_args:
+        command += f" {additional_args}"
+
+    command += f" {hash_file}"
+
+    return execute_command(shlex.split(command))
+
+
+def handle_wpscan(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle wpscan WordPress vulnerability scanner execution.
+
+    Args:
+        params: Dictionary containing scan parameters:
+            - url (required): Target WordPress URL
+            - additional_args (optional): Additional wpscan arguments
+
+    Returns:
+        Dictionary containing scan results or error information
+    """
+    url = params.get("url", "")
+    additional_args = params.get("additional_args", "")
+
+    if not url:
+        return {"error": "URL parameter is required", "success": False}
+
+    command = f"wpscan --url {url}"
+
+    if additional_args:
+        command += f" {additional_args}"
+
+    return execute_command(shlex.split(command))
+
+
+def handle_enum4linux(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle enum4linux Windows/Samba enumeration tool execution.
+
+    Args:
+        params: Dictionary containing enumeration parameters:
+            - target (required): Target IP or hostname
+            - additional_args (optional): Additional enum4linux arguments (default: "-a")
+
+    Returns:
+        Dictionary containing enumeration results or error information
+    """
+    target = params.get("target", "")
+    additional_args = params.get("additional_args", "-a")
+
+    if not target:
+        return {"error": "Target parameter is required", "success": False}
+
+    command = f"enum4linux {additional_args} {target}"
+
+    return execute_command(shlex.split(command))
+
+
+# ============================================================================
+# Tool Dispatch Table
+# ============================================================================
+# This dispatch table maps tool names to their handler functions.
+# To add a new tool:
+#   1. Create a handler function following the pattern: handle_<tool_name>
+#   2. Add an entry to this table: "tool_name": handle_<tool_name>
+# ============================================================================
+
+TOOL_DISPATCH_TABLE = {
+    "nmap": handle_nmap,
+    "gobuster": handle_gobuster,
+    "dirb": handle_dirb,
+    "nikto": handle_nikto,
+    "sqlmap": handle_sqlmap,
+    "metasploit": handle_metasploit,
+    "hydra": handle_hydra,
+    "john": handle_john,
+    "wpscan": handle_wpscan,
+    "enum4linux": handle_enum4linux,
+}
+
+
 @app.route("/mcp/capabilities", methods=["GET"])
 def get_capabilities():
-    # Return tool capabilities similar to our existing MCP server
-    pass
+    """
+    Return available tool capabilities.
+
+    Returns:
+        JSON response containing list of available tools and their capabilities
+    """
+    capabilities = {
+        "tools": list(TOOL_DISPATCH_TABLE.keys()),
+        "version": "0.1.0",
+        "description": "Kali Linux Tools MCP Server"
+    }
+    return jsonify(capabilities)
 
 
 @app.route("/mcp/tools/kali_tools/<tool_name>", methods=["POST"])
 def execute_tool(tool_name):
-    # Direct tool execution without going through the API server
-    pass
+    """
+    Execute a tool using the dispatch table pattern.
+
+    This function provides a unified endpoint for executing various security tools.
+    Instead of using lengthy if/elif chains, it uses a dispatch table (dictionary)
+    to map tool names to their handler functions. This approach provides:
+
+    - Better maintainability: Adding new tools only requires creating a handler
+      function and adding it to the dispatch table
+    - Improved scalability: No need to modify this function when adding tools
+    - Reduced code duplication: Common error handling is centralized here
+    - Enhanced testability: Each handler can be tested independently
+
+    Args:
+        tool_name: Name of the tool to execute (from URL path parameter)
+
+    Returns:
+        JSON response containing tool execution results or error information
+
+    HTTP Status Codes:
+        200: Successful execution (even if tool fails - check result['success'])
+        400: Invalid request (unknown tool or missing parameters)
+        500: Server error during execution
+    """
+    try:
+        # Validate tool name exists in dispatch table
+        if tool_name not in TOOL_DISPATCH_TABLE:
+            logger.warning(f"Unknown tool requested: {tool_name}")
+            return jsonify({
+                "error": f"Unknown tool: {tool_name}",
+                "available_tools": list(TOOL_DISPATCH_TABLE.keys())
+            }), 400
+
+        # Get request parameters
+        params = request.json if request.json else {}
+
+        # Look up and execute the appropriate handler from dispatch table
+        handler = TOOL_DISPATCH_TABLE[tool_name]
+        logger.info(f"Executing tool: {tool_name}")
+        result = handler(params)
+
+        # Return result with appropriate status code
+        # Note: We return 200 even if the tool failed, as the request itself succeeded
+        # The caller should check result['success'] to determine tool execution status
+        return jsonify(result)
+
+    except Exception as e:
+        # Log the full traceback for debugging
+        logger.error(f"Error executing tool {tool_name}: {str(e)}")
+        logger.error(traceback.format_exc())
+
+        # Return generic error to client
+        return jsonify({
+            "error": f"Server error: {str(e)}",
+            "success": False
+        }), 500
 
 
 def parse_args():
@@ -579,6 +859,7 @@ def parse_args():
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     parser.add_argument("--port", type=int, default=API_PORT, help=f"Port for the API server (default: {API_PORT})")
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     args = parse_args()

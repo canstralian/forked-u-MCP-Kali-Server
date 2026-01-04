@@ -139,3 +139,4 @@ dmypy.json
 tmp/
 temp/
 *.tmp
+demo_dispatch_table.py
